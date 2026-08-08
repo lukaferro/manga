@@ -21,6 +21,11 @@
   font-size: 0.875rem;
 }
 
+.control option {
+  background: var(--bg);
+  color: var(--fg);
+}
+
 .searchInput {
   width: 16rem;
 }
