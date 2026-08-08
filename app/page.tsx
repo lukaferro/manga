@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import MediaCard from "@/components/MediaCard";
 import { AniListError, fetchHomeSections, type HomeSections } from "@/lib/anilist";
 import { getMessages } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import type { Media } from "@/lib/types";
-import MediaCard from "@/components/MediaCard";
+import styles from "./home.module.css";
 
 export const metadata: Metadata = {
   title: "Home | Manga & Anime",
@@ -16,9 +17,9 @@ interface SectionProps {
 
 function Section({ title, media }: SectionProps) {
   return (
-    <section className="px-4 py-6">
-      <h2 className="mb-3 text-xl font-semibold">{title}</h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+    <section className={styles.section}>
+      <h2 className={styles.heading}>{title}</h2>
+      <div className={styles.grid}>
         {media.map((m) => (
           <MediaCard key={m.id} media={m} />
         ))}

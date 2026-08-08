@@ -1,4 +1,5 @@
 import Link from "next/link";
+import MediaCard from "@/components/MediaCard";
 import {
   fetchGenres,
   fetchMediaList,
@@ -13,7 +14,7 @@ import type {
   MediaStatus,
   MediaType,
 } from "@/lib/types";
-import MediaCard from "@/components/MediaCard";
+import styles from "./browse.module.css";
 
 const PER_PAGE = 24;
 
@@ -131,28 +132,22 @@ export default async function BrowsePage({
     years.push(y);
   }
 
-  const selectCls = "border border-black/10 px-2 py-1 text-sm";
-
   return (
     <main className="flex flex-1 flex-col px-4 py-6">
-      <form
-        method="GET"
-        action="/browse"
-        className="mb-4 flex flex-wrap items-end gap-3"
-      >
-        <label className="flex flex-col gap-1 text-sm">
+      <form method="GET" action="/browse" className={styles.form}>
+        <label className={styles.field}>
           {t.searchPlaceholder}
           <input
             type="text"
             name="search"
             defaultValue={search ?? ""}
             placeholder={t.searchPlaceholder}
-            className={`${selectCls} w-64`}
+            className={`${styles.control} ${styles.searchInput}`}
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className={styles.field}>
           {t.type}
-          <select name="type" defaultValue={type ?? ""} className={selectCls}>
+          <select name="type" defaultValue={type ?? ""} className={styles.control}>
             {TYPES.map((v) => (
               <option key={v || "all"} value={v}>
                 {v === "" ? t.all : v}
@@ -160,9 +155,9 @@ export default async function BrowsePage({
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className={styles.field}>
           {t.genre}
-          <select name="genre" defaultValue={genre ?? ""} className={selectCls}>
+          <select name="genre" defaultValue={genre ?? ""} className={styles.control}>
             <option value="">{t.all}</option>
             {genres.map((g) => (
               <option key={g} value={g}>
@@ -171,9 +166,9 @@ export default async function BrowsePage({
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className={styles.field}>
           {t.season}
-          <select name="season" defaultValue={season ?? ""} className={selectCls}>
+          <select name="season" defaultValue={season ?? ""} className={styles.control}>
             {SEASONS.map((v) => (
               <option key={v || "all"} value={v}>
                 {v === "" ? t.all : v}
@@ -181,9 +176,9 @@ export default async function BrowsePage({
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className={styles.field}>
           {t.year}
-          <select name="year" defaultValue={year ? String(year) : ""} className={selectCls}>
+          <select name="year" defaultValue={year ? String(year) : ""} className={styles.control}>
             <option value="">{t.all}</option>
             {years.map((y) => (
               <option key={y} value={y}>
@@ -192,9 +187,9 @@ export default async function BrowsePage({
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className={styles.field}>
           {t.format}
-          <select name="format" defaultValue={format ?? ""} className={selectCls}>
+          <select name="format" defaultValue={format ?? ""} className={styles.control}>
             {FORMATS.map((v) => (
               <option key={v || "all"} value={v}>
                 {v === "" ? t.all : v}
@@ -202,9 +197,9 @@ export default async function BrowsePage({
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className={styles.field}>
           {t.status}
-          <select name="status" defaultValue={status ?? ""} className={selectCls}>
+          <select name="status" defaultValue={status ?? ""} className={styles.control}>
             {STATUSES.map((v) => (
               <option key={v || "all"} value={v}>
                 {v === "" ? t.all : v}
@@ -212,9 +207,9 @@ export default async function BrowsePage({
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className={styles.field}>
           {t.sort}
-          <select name="sort" defaultValue={sort ?? "POPULARITY_DESC"} className={selectCls}>
+          <select name="sort" defaultValue={sort ?? "POPULARITY_DESC"} className={styles.control}>
             {SORTS.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -222,7 +217,7 @@ export default async function BrowsePage({
             ))}
           </select>
         </label>
-        <button type="submit" className="border border-black/10 px-3 py-1 text-sm">
+        <button type="submit" className={styles.button}>
           {t.browse}
         </button>
       </form>
@@ -231,16 +226,16 @@ export default async function BrowsePage({
         <p>{errorMessage}</p>
       ) : result && result.media.length > 0 ? (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          <div className={styles.grid}>
             {result.media.map((m) => (
               <MediaCard key={m.id} media={m} />
             ))}
           </div>
 
-          <nav className="mt-6 flex items-center gap-4">
+          <nav className={styles.pagination}>
             {page > 1 ? (
               <Link
-                className="border border-black/10 px-3 py-1 text-sm"
+                className={styles.button}
                 href={buildHref({
                   page: page - 1,
                   search,
@@ -256,12 +251,12 @@ export default async function BrowsePage({
                 {t.prev}
               </Link>
             ) : null}
-            <span className="text-sm">
+            <span className={styles.pageInfo}>
               {t.page} {page}
             </span>
             {result.pageInfo.hasNextPage ? (
               <Link
-                className="border border-black/10 px-3 py-1 text-sm"
+                className={styles.button}
                 href={buildHref({
                   page: page + 1,
                   search,

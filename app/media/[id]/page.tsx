@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import MediaCard from "@/components/MediaCard";
 import { AniListError, fetchMediaDetail } from "@/lib/anilist";
 import { getMessages } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import type { FuzzyDate, Media } from "@/lib/types";
-import MediaCard from "@/components/MediaCard";
+import styles from "./detail.module.css";
 
 interface DetailPageProps {
   params: Promise<{ id: string }>;
@@ -19,8 +20,8 @@ function formatDate(date: FuzzyDate): string {
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <p className="text-sm">
-      <span className="font-medium">{label}:</span> {value}
+    <p className={styles.detailRow}>
+      <span className={styles.detailLabel}>{label}:</span> {value}
     </p>
   );
 }
@@ -47,9 +48,9 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
 
   if (notFound || !media) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4">
+      <main className={styles.notFound}>
         <p>{errorMessage ?? t.notFound}</p>
-        <Link href="/browse" className="border border-black/10 px-3 py-1 text-sm">
+        <Link href="/browse" className={styles.button}>
           {t.backToBrowse}
         </Link>
       </main>
@@ -62,49 +63,49 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
   return (
     <main className="flex flex-1 flex-col">
       {media.bannerImage ? (
-        <div className="relative h-48 w-full">
+        <div className={styles.banner}>
           <Image
             src={media.bannerImage}
             alt=""
             fill
             sizes="100vw"
-            className="object-cover"
+            className={styles.bannerImage}
           />
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-6 px-4 py-6 md:flex-row">
-        <div className="relative w-48 shrink-0">
+      <div className={styles.layout}>
+        <div className={styles.coverWrap}>
           {media.coverImage.extraLarge ?? media.coverImage.large ? (
             <Image
               src={media.coverImage.extraLarge ?? media.coverImage.large ?? ""}
               alt={mainTitle}
               width={230}
               height={345}
-              className="h-auto w-full object-cover"
+              className={styles.coverImage}
             />
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-3">
-          <h1 className="text-2xl font-bold">{mainTitle}</h1>
+        <div className={styles.info}>
+          <h1 className={styles.title}>{mainTitle}</h1>
           {media.title.english && media.title.english !== mainTitle ? (
-            <h2 className="text-lg text-zinc-600">{media.title.english}</h2>
+            <h2 className={styles.subtitle}>{media.title.english}</h2>
           ) : null}
           {media.title.native ? (
-            <h2 className="text-lg text-zinc-600">{media.title.native}</h2>
+            <h2 className={styles.subtitle}>{media.title.native}</h2>
           ) : null}
 
-          <div className="flex flex-wrap gap-2 text-sm">
-            <span className="border border-black/10 px-2 py-0.5">{media.type}</span>
+          <div className={styles.badgeRow}>
+            <span className={styles.badge}>{media.type}</span>
             {media.format ? (
-              <span className="border border-black/10 px-2 py-0.5">{media.format}</span>
+              <span className={styles.badge}>{media.format}</span>
             ) : null}
             {media.status ? (
-              <span className="border border-black/10 px-2 py-0.5">{media.status}</span>
+              <span className={styles.badge}>{media.status}</span>
             ) : null}
             {media.averageScore != null ? (
-              <span className="border border-black/10 px-2 py-0.5">
+              <span className={styles.badge}>
                 {t.score}: {media.averageScore}
               </span>
             ) : null}
@@ -112,12 +113,12 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
 
           {media.description ? (
             <div
-              className="text-sm [&_a]:underline [&_br]:my-2"
+              className={styles.description}
               dangerouslySetInnerHTML={{ __html: media.description }}
             />
           ) : null}
 
-          <div className="flex flex-col gap-1">
+          <div className={styles.details}>
             {media.popularity != null ? (
               <DetailRow label={t.popularity} value={String(media.popularity)} />
             ) : null}
@@ -154,12 +155,12 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
           </div>
 
           {media.genres.length > 0 ? (
-            <div className="flex flex-wrap gap-2 text-sm">
+            <div className={styles.badgeRow}>
               {media.genres.map((g) => (
                 <Link
                   key={g}
                   href={`/browse?genre=${encodeURIComponent(g)}`}
-                  className="border border-black/10 px-2 py-0.5"
+                  className={styles.badge}
                 >
                   {g}
                 </Link>
@@ -170,24 +171,24 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
       </div>
 
       {media.characters?.edges?.length ? (
-        <section className="px-4 py-6">
-          <h2 className="mb-3 text-xl font-semibold">{t.characters}</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <section className={styles.section}>
+          <h2 className={styles.sectionHeading}>{t.characters}</h2>
+          <div className={styles.charGrid}>
             {media.characters.edges.map((edge) =>
               edge.node ? (
-                <div key={edge.node.id} className="flex items-center gap-2 border border-black/10 p-2">
+                <div key={edge.node.id} className={styles.charCard}>
                   {edge.node.image?.large ? (
                     <Image
                       src={edge.node.image.large}
                       alt={edge.node.name.full ?? ""}
                       width={64}
                       height={64}
-                      className="h-16 w-16 object-cover"
+                      className={styles.charImage}
                     />
                   ) : null}
-                  <div className="text-sm">
-                    <p className="font-medium">{edge.node.name.full}</p>
-                    <p className="text-xs text-zinc-500">{edge.role}</p>
+                  <div className={styles.charInfo}>
+                    <p className={styles.charName}>{edge.node.name.full}</p>
+                    <p className={styles.charRole}>{edge.role}</p>
                   </div>
                 </div>
               ) : null,
@@ -197,9 +198,9 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
       ) : null}
 
       {media.relations?.edges?.length ? (
-        <section className="px-4 py-6">
-          <h2 className="mb-3 text-xl font-semibold">{t.related}</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        <section className={styles.section}>
+          <h2 className={styles.sectionHeading}>{t.related}</h2>
+          <div className={styles.relGrid}>
             {media.relations.edges.map((edge, i) =>
               edge.node ? (
                 <MediaCard key={`${edge.node.id}-${i}`} media={edge.node} />

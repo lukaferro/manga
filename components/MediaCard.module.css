@@ -1,0 +1,31 @@
+.card {
+  display: block;
+  border: 1px solid var(--border);
+  padding: 0.5rem;
+}
+
+.cover {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  width: 100%;
+  overflow: hidden;
+}
+
+.image {
+  object-fit: cover;
+}
+
+.title {
+  margin-top: 0.25rem;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
