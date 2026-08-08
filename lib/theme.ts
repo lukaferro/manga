@@ -1,26 +1,23 @@
 export const THEME_COOKIE = "theme";
 
-export type Theme = "light" | "dark" | "system";
+export type Theme = "light" | "dark";
 
-export const THEMES: Theme[] = ["light", "dark", "system"];
+export const THEMES: Theme[] = ["light", "dark"];
+
+export const THEME_CHANGE_EVENT = "themechange";
 
 export function readThemeCookie(): Theme {
   const match = document.cookie.match(new RegExp(`(?:^|; )${THEME_COOKIE}=([^;]*)`));
   const value = match ? decodeURIComponent(match[1]) : "";
-  return THEMES.includes(value as Theme) ? (value as Theme) : "system";
+  if (value === "light" || value === "dark") return value;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-export function applyTheme(theme: Theme) {
-  const resolved =
-    theme === "system"
-      ? window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light"
-      : theme;
-  document.documentElement.setAttribute("data-theme", resolved);
+export function saveTheme(theme: Theme) {
   document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=31536000; samesite=lax`;
+  window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
 }
 
-export function systemPrefersDark(): boolean {
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+export function setThemeAttribute(theme: Theme) {
+  document.documentElement.setAttribute("data-theme", theme);
 }

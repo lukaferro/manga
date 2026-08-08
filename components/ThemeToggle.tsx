@@ -2,20 +2,19 @@
 
 import { useLayoutEffect, useSyncExternalStore } from "react";
 import {
-  applyTheme,
   readThemeCookie,
-  systemPrefersDark,
+  saveTheme,
+  setThemeAttribute,
+  THEME_CHANGE_EVENT,
   type Theme,
 } from "@/lib/theme";
 import styles from "./ThemeToggle.module.css";
 
 interface ThemeToggleProps {
-  labels: { light: string; dark: string; system: string };
+  labels: { light: string; dark: string };
 }
 
-const THEME_ORDER: Theme[] = ["light", "dark", "system"];
-
-const THEME_CHANGE_EVENT = "themechange";
+const THEME_ORDER: Theme[] = ["light", "dark"];
 
 function themeSubscribe(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -30,29 +29,15 @@ export default function ThemeToggle({ labels }: ThemeToggleProps) {
   const theme = useSyncExternalStore(
     themeSubscribe,
     readThemeCookie,
-    () => "system" as Theme,
+    () => "light" as Theme,
   );
 
   useLayoutEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
-
-  useLayoutEffect(() => {
-    if (theme !== "system") return;
-    const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => {
-      document.documentElement.setAttribute(
-        "data-theme",
-        systemPrefersDark() ? "dark" : "light",
-      );
-    };
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
+    setThemeAttribute(theme);
   }, [theme]);
 
   function handleChange(next: Theme) {
-    applyTheme(next);
-    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
+    saveTheme(next);
   }
 
   return (

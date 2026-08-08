@@ -24,9 +24,7 @@ export default async function Navbar() {
       </nav>
       <div className={styles.controls}>
         <LangSwitcher lang={lang} />
-        <ThemeToggle
-          labels={{ light: t.light, dark: t.dark, system: t.system }}
-        />
+        <ThemeToggle labels={{ light: t.light, dark: t.dark }} />
       </div>
     </header>
   );
