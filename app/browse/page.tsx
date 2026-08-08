@@ -47,6 +47,47 @@ const SORTS: MediaSort[] = [
   "TITLE_ROMAJI",
 ];
 
+const TYPE_LABELS: Record<string, string> = {
+  ANIME: "Anime",
+  MANGA: "Manga",
+};
+
+const SEASON_LABELS: Record<string, string> = {
+  WINTER: "Winter",
+  SPRING: "Spring",
+  SUMMER: "Summer",
+  FALL: "Fall",
+};
+
+const FORMAT_LABELS: Record<string, string> = {
+  TV: "TV",
+  TV_SHORT: "TV Short",
+  MOVIE: "Movie",
+  SPECIAL: "Special",
+  OVA: "OVA",
+  ONA: "ONA",
+  MUSIC: "Music",
+  MANGA: "Manga",
+  NOVEL: "Novel",
+  ONE_SHOT: "One Shot",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  RELEASING: "Releasing",
+  FINISHED: "Finished",
+  NOT_YET_RELEASED: "Not Yet Released",
+  CANCELLED: "Cancelled",
+  HIATUS: "Hiatus",
+};
+
+const SORT_LABELS: Record<string, string> = {
+  POPULARITY_DESC: "Popularity",
+  TRENDING_DESC: "Trending",
+  SCORE_DESC: "Score",
+  START_DATE_DESC: "Start Date",
+  TITLE_ROMAJI: "Title",
+};
+
 type RawParams = Record<string, string | string[] | undefined>;
 
 function first(value: string | string[] | undefined): string | undefined {
@@ -147,7 +188,7 @@ export default async function BrowsePage({
           <select name="type" defaultValue={type ?? ""} className={styles.control}>
             {TYPES.map((v) => (
               <option key={v || "all"} value={v}>
-                {v === "" ? "All" : v}
+                {v === "" ? "All" : TYPE_LABELS[v] ?? v}
               </option>
             ))}
           </select>
@@ -168,7 +209,7 @@ export default async function BrowsePage({
           <select name="season" defaultValue={season ?? ""} className={styles.control}>
             {SEASONS.map((v) => (
               <option key={v || "all"} value={v}>
-                {v === "" ? "All" : v}
+                {v === "" ? "All" : SEASON_LABELS[v] ?? v}
               </option>
             ))}
           </select>
@@ -189,7 +230,7 @@ export default async function BrowsePage({
           <select name="format" defaultValue={format ?? ""} className={styles.control}>
             {FORMATS.map((v) => (
               <option key={v || "all"} value={v}>
-                {v === "" ? "All" : v}
+                {v === "" ? "All" : FORMAT_LABELS[v] ?? v}
               </option>
             ))}
           </select>
@@ -199,7 +240,7 @@ export default async function BrowsePage({
           <select name="status" defaultValue={status ?? ""} className={styles.control}>
             {STATUSES.map((v) => (
               <option key={v || "all"} value={v}>
-                {v === "" ? "All" : v}
+                {v === "" ? "All" : STATUS_LABELS[v] ?? v}
               </option>
             ))}
           </select>
@@ -209,7 +250,7 @@ export default async function BrowsePage({
           <select name="sort" defaultValue={sort ?? "POPULARITY_DESC"} className={styles.control}>
             {SORTS.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {SORT_LABELS[s] ?? s}
               </option>
             ))}
           </select>
