@@ -38,6 +38,9 @@ const messages = {
     related: "Opere correlate",
     notFound: "Media non trovato.",
     backToBrowse: "Torna a Esplora",
+    light: "Chiaro",
+    dark: "Scuro",
+    system: "Sistema",
   },
   en: {
     home: "Home",
@@ -74,6 +77,9 @@ const messages = {
     related: "Related Media",
     notFound: "Media not found.",
     backToBrowse: "Back to Browse",
+    light: "Light",
+    dark: "Dark",
+    system: "System",
   },
 } as const;
 

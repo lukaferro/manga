@@ -3,12 +3,23 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --border: rgba(0, 0, 0, 0.1);
+  --muted: #71717a;
+}
+
+:root[data-theme="dark"] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --border: rgba(255, 255, 255, 0.15);
+  --muted: #a1a1aa;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --border: rgba(255, 255, 255, 0.15);
+    --muted: #a1a1aa;
   }
 }
 
