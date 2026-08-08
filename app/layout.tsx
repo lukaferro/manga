@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import ThemeScript from "@/components/ThemeScript";
-import { getLang } from "@/lib/lang";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,11 +19,10 @@ export const metadata: Metadata = {
   description: "Browse manga and anime powered by AniList",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const lang = await getLang();
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang={lang}
+      lang="en"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >

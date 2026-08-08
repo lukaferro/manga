@@ -2,8 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import MediaCard from "@/components/MediaCard";
 import { AniListError, fetchMediaDetail } from "@/lib/anilist";
-import { getMessages } from "@/lib/i18n";
-import { getLang } from "@/lib/lang";
 import type { FuzzyDate, Media } from "@/lib/types";
 import styles from "./detail.module.css";
 
@@ -27,8 +25,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 export default async function MediaDetailPage({ params }: DetailPageProps) {
-  const [{ id }, lang] = await Promise.all([params, getLang()]);
-  const t = getMessages(lang);
+  const { id } = await params;
 
   let media: Media | null = null;
   let notFound = false;
@@ -42,16 +39,16 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
       notFound = true;
     } else {
       errorMessage =
-        err instanceof AniListError ? err.message : "Errore durante il caricamento.";
+        err instanceof AniListError ? err.message : "Error loading content.";
     }
   }
 
   if (notFound || !media) {
     return (
       <main className={styles.notFound}>
-        <p>{errorMessage ?? t.notFound}</p>
+        <p>{errorMessage ?? "Media not found."}</p>
         <Link href="/browse" className={styles.button}>
-          {t.backToBrowse}
+          Back to Browse
         </Link>
       </main>
     );
@@ -106,7 +103,7 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
             ) : null}
             {media.averageScore != null ? (
               <span className={styles.badge}>
-                {t.score}: {media.averageScore}
+                Score: {media.averageScore}
               </span>
             ) : null}
           </div>
@@ -120,31 +117,31 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
 
           <div className={styles.details}>
             {media.popularity != null ? (
-              <DetailRow label={t.popularity} value={String(media.popularity)} />
+              <DetailRow label="Popularity" value={String(media.popularity)} />
             ) : null}
             {media.season && media.seasonYear ? (
-              <DetailRow label={t.season} value={`${media.season} ${media.seasonYear}`} />
+              <DetailRow label="Season" value={`${media.season} ${media.seasonYear}`} />
             ) : null}
             {media.startDate.year ? (
-              <DetailRow label={t.details} value={formatDate(media.startDate)} />
+              <DetailRow label="Details" value={formatDate(media.startDate)} />
             ) : null}
             {media.episodes != null ? (
-              <DetailRow label={t.episodes} value={String(media.episodes)} />
+              <DetailRow label="Episodes" value={String(media.episodes)} />
             ) : null}
             {media.chapters != null ? (
-              <DetailRow label={t.chapters} value={String(media.chapters)} />
+              <DetailRow label="Chapters" value={String(media.chapters)} />
             ) : null}
             {media.volumes != null ? (
-              <DetailRow label={t.volumes} value={String(media.volumes)} />
+              <DetailRow label="Volumes" value={String(media.volumes)} />
             ) : null}
             {media.duration != null ? (
-              <DetailRow label={t.duration} value={`${media.duration} min`} />
+              <DetailRow label="Duration" value={`${media.duration} min`} />
             ) : null}
             {media.source ? (
-              <DetailRow label={t.source} value={media.source} />
+              <DetailRow label="Source" value={media.source} />
             ) : null}
             {media.countryOfOrigin ? (
-              <DetailRow label={t.country} value={media.countryOfOrigin} />
+              <DetailRow label="Country" value={media.countryOfOrigin} />
             ) : null}
             {media.studios?.nodes?.length ? (
               <DetailRow
@@ -172,7 +169,7 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
 
       {media.characters?.edges?.length ? (
         <section className={styles.section}>
-          <h2 className={styles.sectionHeading}>{t.characters}</h2>
+          <h2 className={styles.sectionHeading}>Characters</h2>
           <div className={styles.charGrid}>
             {media.characters.edges.map((edge) =>
               edge.node ? (
@@ -199,7 +196,7 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
 
       {media.relations?.edges?.length ? (
         <section className={styles.section}>
-          <h2 className={styles.sectionHeading}>{t.related}</h2>
+          <h2 className={styles.sectionHeading}>Related Media</h2>
           <div className={styles.relGrid}>
             {media.relations.edges.map((edge, i) =>
               edge.node ? (

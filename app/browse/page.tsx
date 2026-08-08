@@ -5,8 +5,6 @@ import {
   fetchMediaList,
   AniListError,
 } from "@/lib/anilist";
-import { getMessages } from "@/lib/i18n";
-import { getLang } from "@/lib/lang";
 import type {
   MediaFormat,
   MediaSeason,
@@ -86,8 +84,7 @@ export default async function BrowsePage({
 }: {
   searchParams: Promise<RawParams>;
 }) {
-  const [lang, raw] = await Promise.all([getLang(), searchParams]);
-  const t = getMessages(lang);
+  const raw = await searchParams;
 
   const page = Math.max(1, parseInt(first(raw.page) ?? "1", 10) || 1);
   const search = cleanParam(first(raw.search));
@@ -123,7 +120,7 @@ export default async function BrowsePage({
     result = mediaData.Page;
   } catch (err) {
     errorMessage =
-      err instanceof AniListError ? err.message : "Errore durante il caricamento.";
+      err instanceof AniListError ? err.message : "Error loading content.";
   }
 
   const currentYear = new Date().getFullYear();
@@ -136,29 +133,29 @@ export default async function BrowsePage({
     <main className="flex flex-1 flex-col px-4 py-6">
       <form method="GET" action="/browse" className={styles.form}>
         <label className={styles.field}>
-          {t.searchPlaceholder}
+          Search anime and manga...
           <input
             type="text"
             name="search"
             defaultValue={search ?? ""}
-            placeholder={t.searchPlaceholder}
+            placeholder="Search anime and manga..."
             className={`${styles.control} ${styles.searchInput}`}
           />
         </label>
         <label className={styles.field}>
-          {t.type}
+          Type
           <select name="type" defaultValue={type ?? ""} className={styles.control}>
             {TYPES.map((v) => (
               <option key={v || "all"} value={v}>
-                {v === "" ? t.all : v}
+                {v === "" ? "All" : v}
               </option>
             ))}
           </select>
         </label>
         <label className={styles.field}>
-          {t.genre}
+          Genre
           <select name="genre" defaultValue={genre ?? ""} className={styles.control}>
-            <option value="">{t.all}</option>
+            <option value="">All</option>
             {genres.map((g) => (
               <option key={g} value={g}>
                 {g}
@@ -167,19 +164,19 @@ export default async function BrowsePage({
           </select>
         </label>
         <label className={styles.field}>
-          {t.season}
+          Season
           <select name="season" defaultValue={season ?? ""} className={styles.control}>
             {SEASONS.map((v) => (
               <option key={v || "all"} value={v}>
-                {v === "" ? t.all : v}
+                {v === "" ? "All" : v}
               </option>
             ))}
           </select>
         </label>
         <label className={styles.field}>
-          {t.year}
+          Year
           <select name="year" defaultValue={year ? String(year) : ""} className={styles.control}>
-            <option value="">{t.all}</option>
+            <option value="">All</option>
             {years.map((y) => (
               <option key={y} value={y}>
                 {y}
@@ -188,27 +185,27 @@ export default async function BrowsePage({
           </select>
         </label>
         <label className={styles.field}>
-          {t.format}
+          Format
           <select name="format" defaultValue={format ?? ""} className={styles.control}>
             {FORMATS.map((v) => (
               <option key={v || "all"} value={v}>
-                {v === "" ? t.all : v}
+                {v === "" ? "All" : v}
               </option>
             ))}
           </select>
         </label>
         <label className={styles.field}>
-          {t.status}
+          Status
           <select name="status" defaultValue={status ?? ""} className={styles.control}>
             {STATUSES.map((v) => (
               <option key={v || "all"} value={v}>
-                {v === "" ? t.all : v}
+                {v === "" ? "All" : v}
               </option>
             ))}
           </select>
         </label>
         <label className={styles.field}>
-          {t.sort}
+          Sort
           <select name="sort" defaultValue={sort ?? "POPULARITY_DESC"} className={styles.control}>
             {SORTS.map((s) => (
               <option key={s} value={s}>
@@ -218,7 +215,7 @@ export default async function BrowsePage({
           </select>
         </label>
         <button type="submit" className={styles.button}>
-          {t.browse}
+          Browse
         </button>
       </form>
 
@@ -248,11 +245,11 @@ export default async function BrowsePage({
                   status,
                 })}
               >
-                {t.prev}
+                Previous
               </Link>
             ) : null}
             <span className={styles.pageInfo}>
-              {t.page} {page}
+              Page {page}
             </span>
             {result.pageInfo.hasNextPage ? (
               <Link
@@ -269,13 +266,13 @@ export default async function BrowsePage({
                   status,
                 })}
               >
-                {t.next}
+                Next
               </Link>
             ) : null}
           </nav>
         </>
       ) : (
-        <p>{t.noResults}</p>
+        <p>No results found.</p>
       )}
     </main>
   );

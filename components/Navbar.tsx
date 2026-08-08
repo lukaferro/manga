@@ -1,14 +1,8 @@
 import Link from "next/link";
-import LangSwitcher from "@/components/LangSwitcher";
 import ThemeToggle from "@/components/ThemeToggle";
-import { getMessages } from "@/lib/i18n";
-import { getLang } from "@/lib/lang";
 import styles from "./Navbar.module.css";
 
-export default async function Navbar() {
-  const lang = await getLang();
-  const t = getMessages(lang);
-
+export default function Navbar() {
   return (
     <header className={styles.header}>
       <nav className={styles.nav}>
@@ -16,15 +10,14 @@ export default async function Navbar() {
           Manga & Anime
         </Link>
         <Link href="/" className={styles.link}>
-          {t.home}
+          Home
         </Link>
         <Link href="/browse" className={styles.link}>
-          {t.browse}
+          Browse
         </Link>
       </nav>
       <div className={styles.controls}>
-        <LangSwitcher lang={lang} />
-        <ThemeToggle labels={{ light: t.light, dark: t.dark }} />
+        <ThemeToggle labels={{ light: "Light", dark: "Dark" }} />
       </div>
     </header>
   );
