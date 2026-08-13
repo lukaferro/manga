@@ -263,7 +263,7 @@ export async function fetchHomeSections(): Promise<HomeSections> {
   };
 }
 
-function getCurrentSeason(): MediaSeason {
+export function getCurrentSeason(): MediaSeason {
   const month = new Date().getMonth() + 1;
   if (month >= 1 && month <= 3) return "WINTER";
   if (month >= 4 && month <= 6) return "SPRING";

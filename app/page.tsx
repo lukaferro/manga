@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import HeroCarousel from "@/components/HeroCarousel";
 import MediaCard from "@/components/MediaCard";
-import { AniListError, fetchHomeSections, type HomeSections } from "@/lib/anilist";
+import {
+  AniListError,
+  fetchHomeSections,
+  getCurrentSeason,
+  type HomeSections,
+} from "@/lib/anilist";
 import type { Media } from "@/lib/types";
 import styles from "./home.module.css";
 
@@ -11,13 +18,40 @@ export const metadata: Metadata = {
 interface SectionProps {
   title: string;
   media: Media[];
+  href: string;
 }
 
-function Section({ title, media }: SectionProps) {
+function browseHref(params: Record<string, string>): string {
+  const url = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) url.set(key, value);
+  }
+  return `/browse?${url.toString()}`;
+}
+
+function Row({ title, media, href }: SectionProps) {
   return (
-    <section className={styles.section}>
-      <h2 className={styles.heading}>{title}</h2>
-      <div className={styles.grid}>
+    <section className={styles.rowSection}>
+      <Link href={href} className={styles.headingLink}>
+        <h2 className={styles.heading}>{title}</h2>
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          aria-hidden="true"
+          className={styles.headingArrow}
+        >
+          <path
+            d="M5 12h14M13 6l6 6-6 6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </Link>
+      <div className={styles.row}>
         {media.map((m) => (
           <MediaCard key={m.id} media={m} />
         ))}
@@ -41,14 +75,55 @@ export default async function HomePage() {
     return <main className="px-4 py-6">{errorMessage}</main>;
   }
 
+  const season = getCurrentSeason();
+  const year = new Date().getFullYear();
+
+  const featured = [
+    sections.anime.trending[0],
+    sections.manga.trending[0],
+    sections.anime.trending[1],
+    sections.manga.trending[1],
+    sections.anime.trending[2],
+  ].filter(Boolean) as Media[];
+
   return (
     <main className="flex flex-1 flex-col">
-      <Section title="Anime · Trending" media={sections.anime.trending} />
-      <Section title="Anime · Popular This Season" media={sections.anime.season} />
-      <Section title="Anime · Top Rated" media={sections.anime.top} />
-      <Section title="Manga · Trending" media={sections.manga.trending} />
-      <Section title="Manga · Popular" media={sections.manga.popular} />
-      <Section title="Manga · Top Rated" media={sections.manga.top} />
+      <HeroCarousel items={featured} />
+      <Row
+        title="Anime · Trending"
+        media={sections.anime.trending}
+        href={browseHref({ type: "ANIME", sort: "TRENDING_DESC" })}
+      />
+      <Row
+        title="Anime · Popular This Season"
+        media={sections.anime.season}
+        href={browseHref({
+          type: "ANIME",
+          sort: "POPULARITY_DESC",
+          season,
+          seasonYear: String(year),
+        })}
+      />
+      <Row
+        title="Anime · Top Rated"
+        media={sections.anime.top}
+        href={browseHref({ type: "ANIME", sort: "SCORE_DESC" })}
+      />
+      <Row
+        title="Manga · Trending"
+        media={sections.manga.trending}
+        href={browseHref({ type: "MANGA", sort: "TRENDING_DESC" })}
+      />
+      <Row
+        title="Manga · Popular"
+        media={sections.manga.popular}
+        href={browseHref({ type: "MANGA", sort: "POPULARITY_DESC" })}
+      />
+      <Row
+        title="Manga · Top Rated"
+        media={sections.manga.top}
+        href={browseHref({ type: "MANGA", sort: "SCORE_DESC" })}
+      />
     </main>
   );
 }
