@@ -1,12 +1,22 @@
-.select {
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
   border: 1px solid var(--border);
-  background: transparent;
-  color: inherit;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
+  border-radius: 9999px;
+  background: var(--accent-soft);
+  color: var(--foreground);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
-.select option {
-  background: var(--bg);
-  color: var(--fg);
+.toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.06);
 }
