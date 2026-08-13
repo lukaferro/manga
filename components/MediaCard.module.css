@@ -1,7 +1,17 @@
 .card {
   display: block;
-  border: 1px solid var(--border);
-  padding: 0.5rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: var(--card);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.card:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: var(--shadow);
 }
 
 .cover {
@@ -13,19 +23,56 @@
 
 .image {
   object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.card:hover .image {
+  transform: scale(1.08);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.15rem;
+  padding: 0.65rem;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--background) 92%, transparent) 0%,
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.card:hover .overlay {
+  opacity: 1;
 }
 
 .title {
-  margin-top: 0.25rem;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .meta {
   font-size: 0.75rem;
   color: var(--muted);
+}
+
+@media (hover: none) {
+  .overlay {
+    opacity: 1;
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--background) 96%, transparent) 0%,
+      color-mix(in srgb, var(--background) 40%, transparent) 60%,
+      transparent 100%
+    );
+  }
 }

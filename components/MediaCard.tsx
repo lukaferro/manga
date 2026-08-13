@@ -22,15 +22,17 @@ export default function MediaCard({ media }: MediaCardProps) {
             src={src}
             alt={mediaTitle(media)}
             fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
+            sizes="(max-width: 640px) 40vw, 160px"
             className={styles.image}
           />
         ) : null}
+        <div className={styles.overlay}>
+          <p className={styles.title}>{mediaTitle(media)}</p>
+          <p className={styles.meta}>
+            {media.type} {media.averageScore != null ? `· ${media.averageScore}` : ""}
+          </p>
+        </div>
       </div>
-      <p className={styles.title}>{mediaTitle(media)}</p>
-      <p className={styles.meta}>
-        {media.type} {media.averageScore != null ? `· ${media.averageScore}` : ""}
-      </p>
     </Link>
   );
 }
