@@ -1,30 +1,68 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --border: rgba(0, 0, 0, 0.1);
-  --muted: #71717a;
+  --background: #faf7f4;
+  --foreground: #1f1a17;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --border: rgba(31, 26, 23, 0.12);
+  --muted: #78716c;
+  --accent: #d63a5a;
+  --accent-soft: rgba(214, 58, 90, 0.14);
+  --overlay-start: rgba(250, 247, 244, 0);
+  --overlay-end: #faf7f4;
+  --shadow: 0 10px 30px rgba(31, 26, 23, 0.12);
 }
 
 :root[data-theme="dark"] {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --border: rgba(255, 255, 255, 0.15);
-  --muted: #a1a1aa;
+  --background: #0d0b0c;
+  --foreground: #f3edea;
+  --surface: #171214;
+  --card: #171214;
+  --border: rgba(243, 237, 234, 0.14);
+  --muted: #a8a09a;
+  --accent: #e8536f;
+  --accent-soft: rgba(232, 83, 111, 0.16);
+  --overlay-start: rgba(13, 11, 12, 0);
+  --overlay-end: #0d0b0c;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --border: rgba(255, 255, 255, 0.15);
-    --muted: #a1a1aa;
+    --background: #0d0b0c;
+    --foreground: #f3edea;
+    --surface: #171214;
+    --card: #171214;
+    --border: rgba(243, 237, 234, 0.14);
+    --muted: #a8a09a;
+    --accent: #e8536f;
+    --accent-soft: rgba(232, 83, 111, 0.16);
+    --overlay-start: rgba(13, 11, 12, 0);
+    --overlay-end: #0d0b0c;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
   }
 }
 
+html {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image: radial-gradient(
+    ellipse 120% 60% at 50% -10%,
+    var(--accent-soft),
+    transparent 70%
+  );
+  background-repeat: no-repeat;
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }

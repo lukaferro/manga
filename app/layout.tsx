@@ -1,17 +1,19 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Zen_Maru_Gothic, Yuji_Mai } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import ThemeScript from "@/components/ThemeScript";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const zenMaruGothic = Zen_Maru_Gothic({
+  variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "700", "900"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const yujiMai = Yuji_Mai({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -24,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${zenMaruGothic.variable} ${yujiMai.variable} h-full antialiased`}
     >
       <head>
         <ThemeScript />
