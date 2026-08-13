@@ -171,7 +171,8 @@ export default async function BrowsePage({
   }
 
   return (
-    <main className="flex flex-1 flex-col px-4 py-6">
+    <main className={styles.page}>
+      <h1 className={styles.title}>Browse</h1>
       <form method="GET" action="/browse" className={styles.form}>
         <label className={styles.field}>
           Search anime and manga...
@@ -255,7 +256,7 @@ export default async function BrowsePage({
             ))}
           </select>
         </label>
-        <button type="submit" className={styles.button}>
+        <button type="submit" className={`${styles.button} ${styles.submit}`}>
           Browse
         </button>
       </form>
