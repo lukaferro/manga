@@ -20,3 +20,15 @@
   color: var(--accent);
   transform: scale(1.06);
 }
+
+.iconLight, .iconDark {
+  display: none;
+}
+
+:global([data-theme='light']) .iconDark {
+  display: block;
+}
+
+:global([data-theme='dark']) .iconLight {
+  display: block;
+}
