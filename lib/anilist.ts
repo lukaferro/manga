@@ -178,7 +178,7 @@ export const GENRES_QUERY = `
 `;
 
 export async function fetchMediaList(
-  params: MediaListParams,
+  params: MediaListParams & { score?: string },
 ): Promise<MediaListResponse> {
   const variables = {
     page: params.page ?? 1,
@@ -191,6 +191,7 @@ export async function fetchMediaList(
     format: params.format ? [params.format] : undefined,
     status: params.status,
     sort: params.sort ? [params.sort] : ["POPULARITY_DESC"],
+    score: params.score ? parseFloat(params.score) : undefined,
   };
 
   return anilistFetch<MediaListResponse>(MEDIA_LIST_QUERY, variables);

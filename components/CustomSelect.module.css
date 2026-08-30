@@ -1,0 +1,114 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+  opacity: 0.8;
+}
+
+.selectWrapper {
+  position: relative;
+}
+
+.selectButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--foreground) !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 1 !important;
+}
+
+/* Supporto esplicito per il tema dark per evitare trasparenze */
+:global([data-theme='dark']) .selectButton {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+}
+
+:global([data-theme='light']) .selectButton {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.selectButton:hover {
+  border-color: var(--accent);
+  background-color: var(--accent-soft) !important;
+}
+
+.selectedText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 0.5rem;
+}
+
+.arrow {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.arrowOpen {
+  transform: rotate(180deg);
+}
+
+.optionsList {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  width: 100%;
+  max-height: 250px;
+  overflow-y: auto;
+  background-color: var(--surface) !important;
+  border: 2px solid var(--border);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  list-style: none;
+  padding: 0.25rem;
+  margin: 0;
+  opacity: 1 !important;
+}
+
+:global([data-theme='dark']) .optionsList {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+}
+
+:global([data-theme='light']) .optionsList {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.option {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--foreground);
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: all 0.1s ease;
+}
+
+.option:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.selected {
+  background: var(--accent);
+  color: white;
+}

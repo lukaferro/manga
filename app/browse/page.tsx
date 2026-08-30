@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import MediaCard from "@/components/MediaCard";
+import FilterBar from "@/components/FilterBar";
 import {
   fetchGenres,
   fetchMediaList,
@@ -13,6 +15,7 @@ import type {
   MediaType,
 } from "@/lib/types";
 import styles from "./browse.module.css";
+import { LoadingGrid } from "./loading";
 
 const PER_PAGE = 24;
 
@@ -98,6 +101,13 @@ function cleanParam(value: string | undefined): string | undefined {
   return value && value !== "" ? value : undefined;
 }
 
+function asEnumValue<T extends string>(
+  value: string | undefined,
+  allowed: readonly T[],
+): T | undefined {
+  return value && allowed.includes(value as T) ? (value as T) : undefined;
+}
+
 interface BuildHrefArgs {
   page: number;
   search?: string;
@@ -120,6 +130,117 @@ function buildHref(args: BuildHrefArgs): string {
   return `/browse?${url.toString()}`;
 }
 
+async function MediaGrid({
+
+  params,
+}: {
+  params: {
+    page: number;
+    search?: string;
+    type?: MediaType;
+    genre?: string;
+    sort?: MediaSort;
+    season?: MediaSeason;
+    year?: number;
+    format?: MediaFormat;
+    status?: MediaStatus;
+  };
+}) {
+  let result;
+  let errorMessage: string | null = null;
+
+  try {
+    const mediaData = await fetchMediaList({
+      page: params.page,
+      perPage: PER_PAGE,
+      search: params.search,
+      type: params.type,
+      genre: params.genre,
+      season: params.season,
+      seasonYear: params.year,
+      format: params.format,
+      status: params.status,
+      sort: params.sort,
+    });
+    result = mediaData.Page;
+  } catch (err) {
+    errorMessage =
+      err instanceof AniListError ? err.message : "Error loading content.";
+  }
+
+  if (errorMessage) {
+    return (
+      <div style={{ 
+        textAlign: 'center', 
+        padding: '3rem', 
+        color: 'var(--muted)', 
+        fontSize: '1.1rem' 
+      }}>
+        <p>Something went wrong while fetching the data.</p>
+        <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>Please try adjusting your filters or refresh the page.</p>
+      </div>
+    );
+  }
+
+  if (!result || result.media.length === 0) {
+    return <p style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted)' }}>No results found.</p>;
+  }
+
+  const currentPage = result.pageInfo.currentPage ?? 1;
+
+  return (
+    <>
+      <div className={styles.grid}>
+        {result.media.map((m) => (
+          <MediaCard key={m.id} media={m} />
+        ))}
+      </div>
+
+      <nav className={styles.pagination}>
+        {currentPage > 1 ? (
+          <Link
+            className={styles.button}
+            href={buildHref({
+              page: currentPage - 1,
+              search: params.search,
+              type: params.type,
+              genre: params.genre,
+              sort: params.sort,
+              season: params.season,
+              year: params.year ? String(params.year) : undefined,
+              format: params.format,
+              status: params.status,
+            })}
+          >
+            Previous
+          </Link>
+        ) : null}
+        <span className={styles.pageInfo}>
+          Page {currentPage}
+        </span>
+        {result.pageInfo.hasNextPage ? (
+          <Link
+            className={styles.button}
+            href={buildHref({
+              page: currentPage + 1,
+              search: params.search,
+              type: params.type,
+              genre: params.genre,
+              sort: params.sort,
+              season: params.season,
+              year: params.year ? String(params.year) : undefined,
+              format: params.format,
+              status: params.status,
+            })}
+          >
+            Next
+          </Link>
+        ) : null}
+      </nav>
+    </>
+  );
+}
+
 export default async function BrowsePage({
   searchParams,
 }: {
@@ -129,193 +250,41 @@ export default async function BrowsePage({
 
   const page = Math.max(1, parseInt(first(raw.page) ?? "1", 10) || 1);
   const search = cleanParam(first(raw.search));
-  const type = cleanParam(first(raw.type)) as MediaType | undefined;
+  const type = asEnumValue(cleanParam(first(raw.type)), TYPES as readonly MediaType[]);
   const genre = cleanParam(first(raw.genre));
-  const sort = cleanParam(first(raw.sort)) as MediaSort | undefined;
-  const season = cleanParam(first(raw.season)) as MediaSeason | undefined;
-  const year = parseInt(cleanParam(first(raw.year)) ?? "", 10);
-  const format = cleanParam(first(raw.format)) as MediaFormat | undefined;
-  const status = cleanParam(first(raw.status)) as MediaStatus | undefined;
+  const sort = asEnumValue(cleanParam(first(raw.sort)), SORTS as readonly MediaSort[]);
+  const season = asEnumValue(cleanParam(first(raw.season)), SEASONS as readonly MediaSeason[]);
+  const yearValue = cleanParam(first(raw.year));
+  const year = yearValue ? Number.parseInt(yearValue, 10) : undefined;
+  const format = asEnumValue(cleanParam(first(raw.format)), FORMATS as readonly MediaFormat[]);
+  const status = asEnumValue(cleanParam(first(raw.status)), STATUSES as readonly MediaStatus[]);
 
-  let genres: string[] = [];
-  let result;
-  let errorMessage: string | null = null;
-
-  try {
-    const [genreData, mediaData] = await Promise.all([
-      fetchGenres(),
-      fetchMediaList({
-        page,
-        perPage: PER_PAGE,
-        search,
-        type,
-        genre,
-        season,
-        seasonYear: Number.isNaN(year) ? undefined : year,
-        format,
-        status,
-        sort,
-      }),
-    ]);
-    genres = genreData.GenreCollection;
-    result = mediaData.Page;
-  } catch (err) {
-    errorMessage =
-      err instanceof AniListError ? err.message : "Error loading content.";
-  }
-
-  const currentYear = new Date().getFullYear();
-  const years: number[] = [];
-  for (let y = currentYear + 1; y >= 1970; y--) {
-    years.push(y);
-  }
+  const genreData = await fetchGenres();
+  const genres = genreData.GenreCollection;
 
   return (
     <main className={styles.page}>
       <h1 className={styles.title}>Browse</h1>
-      <form method="GET" action="/browse" className={styles.form}>
-        <label className={styles.field}>
-          Search anime and manga...
-          <input
-            type="text"
-            name="search"
-            defaultValue={search ?? ""}
-            placeholder="Search anime and manga..."
-            className={`${styles.control} ${styles.searchInput}`}
-          />
-        </label>
-        <label className={styles.field}>
-          Type
-          <select name="type" defaultValue={type ?? ""} className={styles.control}>
-            {TYPES.map((v) => (
-              <option key={v || "all"} value={v}>
-                {v === "" ? "All" : TYPE_LABELS[v] ?? v}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={styles.field}>
-          Genre
-          <select name="genre" defaultValue={genre ?? ""} className={styles.control}>
-            <option value="">All</option>
-            {genres.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={styles.field}>
-          Season
-          <select name="season" defaultValue={season ?? ""} className={styles.control}>
-            {SEASONS.map((v) => (
-              <option key={v || "all"} value={v}>
-                {v === "" ? "All" : SEASON_LABELS[v] ?? v}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={styles.field}>
-          Year
-          <select name="year" defaultValue={year ? String(year) : ""} className={styles.control}>
-            <option value="">All</option>
-            {years.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={styles.field}>
-          Format
-          <select name="format" defaultValue={format ?? ""} className={styles.control}>
-            {FORMATS.map((v) => (
-              <option key={v || "all"} value={v}>
-                {v === "" ? "All" : FORMAT_LABELS[v] ?? v}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={styles.field}>
-          Status
-          <select name="status" defaultValue={status ?? ""} className={styles.control}>
-            {STATUSES.map((v) => (
-              <option key={v || "all"} value={v}>
-                {v === "" ? "All" : STATUS_LABELS[v] ?? v}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={styles.field}>
-          Sort
-          <select name="sort" defaultValue={sort ?? "POPULARITY_DESC"} className={styles.control}>
-            {SORTS.map((s) => (
-              <option key={s} value={s}>
-                {SORT_LABELS[s] ?? s}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="submit" className={`${styles.button} ${styles.submit}`}>
-          Browse
-        </button>
-      </form>
-
-      {errorMessage ? (
-        <p>{errorMessage}</p>
-      ) : result && result.media.length > 0 ? (
-        <>
-          <div className={styles.grid}>
-            {result.media.map((m) => (
-              <MediaCard key={m.id} media={m} />
-            ))}
-          </div>
-
-          <nav className={styles.pagination}>
-            {page > 1 ? (
-              <Link
-                className={styles.button}
-                href={buildHref({
-                  page: page - 1,
-                  search,
-                  type,
-                  genre,
-                  sort,
-                  season,
-                  year: year ? String(year) : undefined,
-                  format,
-                  status,
-                })}
-              >
-                Previous
-              </Link>
-            ) : null}
-            <span className={styles.pageInfo}>
-              Page {page}
-            </span>
-            {result.pageInfo.hasNextPage ? (
-              <Link
-                className={styles.button}
-                href={buildHref({
-                  page: page + 1,
-                  search,
-                  type,
-                  genre,
-                  sort,
-                  season,
-                  year: year ? String(year) : undefined,
-                  format,
-                  status,
-                })}
-              >
-                Next
-              </Link>
-            ) : null}
-          </nav>
-        </>
-      ) : (
-        <p>No results found.</p>
-      )}
+      <FilterBar initialGenres={genres} />
+      
+      <Suspense 
+        key={`${search}-${type}-${genre}-${sort}-${season}-${year}-${format}-${status}-${page}`} 
+        fallback={<LoadingGrid />}
+      >
+        <MediaGrid 
+          params={{
+            page,
+            search,
+            type,
+            genre,
+            sort,
+            season,
+            year: Number.isNaN(year) ? undefined : year,
+            format,
+            status,
+          }} 
+        />
+      </Suspense>
     </main>
   );
 }

@@ -104,8 +104,38 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 2rem;
+  padding: 0 2rem;
+}
+
+.skeletonFilterBar {
+  height: 250px;
+  width: 90%;
+  max-width: 1000px;
+  margin: 0 auto 3rem auto;
+  background-color: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 1rem;
+  animation: pulse 1.2s infinite ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeletonCard {
+  height: 350px;
+  background-color: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 1rem;
+  animation: pulse 1.2s infinite ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes pulse {
+  0% { background-color: var(--surface); opacity: 1; }
+  50% { background-color: var(--border); opacity: 0.6; }
+  100% { background-color: var(--surface); opacity: 1; }
 }
 
 @media (min-width: 640px) {

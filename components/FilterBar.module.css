@@ -1,0 +1,138 @@
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem;
+  margin: 0 auto 3rem auto;
+  max-width: 1280px;
+  width: 95%;
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  opacity: 1 !important;
+}
+
+/* Colori espliciti per evitare trasparenze se la variabile fallisce */
+:global([data-theme='dark']) .filterBar {
+  background-color: var(--surface) !important;
+}
+
+:global([data-theme='light']) .filterBar {
+  background-color: var(--surface) !important;
+}
+
+.topSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.searchField {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 800px;
+}
+
+
+
+.searchInput {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  background: var(--bg-color);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--foreground);
+  transition: all 0.2s ease;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.searchButton {
+  padding: 0.75rem 1.5rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.searchButton:hover {
+  opacity: 0.9;
+}
+
+.resetButton {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resetButton:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.filtersGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  width: 100%;
+  justify-content: center;
+}
+
+.filtersGrid > * {
+  flex: 1 1 calc(25% - 1.5rem);
+  min-width: 200px;
+}
+
+.filtersGrid > *:nth-child(n + 5) {
+  flex: 1 1 calc(33.333% - 1.5rem);
+}
+
+@media (max-width: 1100px) {
+  .filtersGrid > * {
+    flex: 1 1 calc(33.333% - 1.5rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .filtersGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .filtersGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .topSection {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtersGrid {
+    grid-template-columns: 1fr;
+  }
+}
