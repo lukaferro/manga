@@ -1,55 +1,50 @@
-.filterBar {
+.filterContainer {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  padding: 2rem;
-  margin: 0 auto 3rem auto;
-  max-width: 1280px;
-  width: 95%;
-  background-color: var(--surface) !important;
+  gap: 1.25rem;
+  width: 100%;
+  margin-bottom: 2.5rem;
+  padding: 1.25rem;
+  background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: 1rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   box-sizing: border-box;
-  opacity: 1 !important;
 }
 
-/* Colori espliciti per evitare trasparenze se la variabile fallisce */
-:global([data-theme='dark']) .filterBar {
-  background-color: var(--surface) !important;
-}
-
-:global([data-theme='light']) .filterBar {
-  background-color: var(--surface) !important;
-}
-
-.topSection {
+/* Row 1: Search & Type Segments */
+.primaryRow {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 1rem;
   flex-wrap: wrap;
   width: 100%;
 }
 
-.searchField {
+.searchWrapper {
   display: flex;
-  gap: 0.5rem;
-  width: 100%;
-  max-width: 800px;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  min-width: 260px;
 }
 
-
+.searchIcon {
+  position: absolute;
+  left: 0.85rem;
+  color: var(--muted);
+  pointer-events: none;
+}
 
 .searchInput {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  background: var(--bg-color);
+  width: 100%;
+  padding: 0.7rem 2.2rem 0.7rem 2.5rem;
+  font-size: 0.9375rem;
+  background-color: var(--background);
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: 0.65rem;
   color: var(--foreground);
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .searchInput:focus {
@@ -58,81 +53,258 @@
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
-.searchButton {
-  padding: 0.75rem 1.5rem;
-  background: var(--accent);
-  color: white;
+.searchInput::placeholder {
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.clearSearchBtn {
+  position: absolute;
+  right: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: var(--border);
+  border: none;
+  border-radius: 50%;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.clearSearchBtn:hover {
+  background-color: var(--accent);
+  color: #ffffff;
+}
+
+/* Type Segmented Pill Tabs */
+.typeSegmented {
+  display: inline-flex;
+  padding: 0.25rem;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  gap: 0.2rem;
+}
+
+.typePill {
+  padding: 0.5rem 1.15rem;
+  font-size: 0.875rem;
+  font-weight: 600;
   border: none;
   border-radius: 0.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-}
-
-.searchButton:hover {
-  opacity: 0.9;
-}
-
-.resetButton {
-  padding: 0.75rem 1.5rem;
   background: transparent;
-  color: var(--foreground);
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  font-weight: 500;
+  color: var(--muted);
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
-.resetButton:hover {
-  background: var(--accent-soft);
-  border-color: var(--accent);
+.typePill:hover {
+  color: var(--foreground);
 }
 
-.filtersGrid {
+.typePillActive {
+  background-color: var(--accent);
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px var(--accent-soft);
+}
+
+/* Row 2: Controls (Genre, Sort & Advanced Toggle) */
+.controlsRow {
   display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
   flex-wrap: wrap;
-  gap: 1.5rem;
   width: 100%;
+}
+
+.quickSelects {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.selectItem {
+  flex: 1;
+  min-width: 170px;
+  max-width: 260px;
+}
+
+.advancedToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.advancedToggleBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.advancedToggleActive {
+  border-color: var(--accent);
+  background-color: var(--accent-soft);
+  color: var(--accent);
+}
+
+.filterBadge {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  width: 18px;
+  height: 18px;
+  background-color: var(--accent);
+  color: #ffffff;
+  border-radius: 50%;
+  font-size: 0.6875rem;
+  font-weight: 700;
 }
 
-.filtersGrid > * {
-  flex: 1 1 calc(25% - 1.5rem);
-  min-width: 200px;
+.toggleArrow {
+  transition: transform 0.2s ease;
 }
 
-.filtersGrid > *:nth-child(n + 5) {
-  flex: 1 1 calc(33.333% - 1.5rem);
+.toggleArrowOpen {
+  transform: rotate(180deg);
 }
 
-@media (max-width: 1100px) {
-  .filtersGrid > * {
-    flex: 1 1 calc(33.333% - 1.5rem);
+/* Advanced Drawer */
+.advancedDrawer {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
+.advancedGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+/* Active Chips & Badges */
+.activeBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border);
+  flex-wrap: wrap;
+}
+
+.chipList {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.activeLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-right: 0.25rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid transparent;
+  border-radius: 2rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.resetLink {
+  background: transparent;
+  border: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.resetLink:hover {
+  color: var(--accent);
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .filtersGrid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .filtersGrid {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .topSection {
+  .primaryRow {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .filtersGrid {
-    grid-template-columns: 1fr;
+  .typeSegmented {
+    width: 100%;
+    display: flex;
+  }
+
+  .typePill {
+    flex: 1;
+    text-align: center;
+  }
+
+  .controlsRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .quickSelects {
+    width: 100%;
+  }
+
+  .selectItem {
+    max-width: 100%;
+  }
+
+  .advancedToggleBtn {
+    justify-content: center;
+    width: 100%;
   }
 }
+
