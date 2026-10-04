@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
+import UserMenu from "@/components/UserMenu";
 import styles from "./Navbar.module.css";
 
 const FADE_RANGE = 240;
@@ -39,6 +40,7 @@ export default function Navbar() {
       </nav>
       <div className={styles.controls}>
         <ThemeToggle labels={{ light: "Light", dark: "Dark" }} />
+        <UserMenu />
       </div>
     </header>
   );

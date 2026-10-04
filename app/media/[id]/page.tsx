@@ -5,6 +5,7 @@ import MediaCard from "@/components/MediaCard";
 import TrailerModal from "@/components/TrailerModal";
 import BackButton from "@/components/BackButton";
 import AiringCountdown from "@/components/AiringCountdown";
+import MediaListAction from "@/components/MediaListAction";
 import { AniListError, fetchMediaDetail } from "@/lib/anilist";
 import type { FuzzyDate, Media } from "@/lib/types";
 import styles from "./detail.module.css";
@@ -140,6 +141,14 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
 
             {/* Trailer Modal Button */}
             <TrailerModal trailer={media.trailer} title={mainTitle} />
+
+            {/* In-app AniList List Management */}
+            <MediaListAction
+              mediaId={media.id}
+              mediaType={media.type}
+              maxEpisodes={media.episodes}
+              maxChapters={media.chapters}
+            />
 
             {/* Information Card */}
             <div className={styles.metaCard}>
