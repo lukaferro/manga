@@ -86,6 +86,11 @@ export const MEDIA_FIELDS = `
   countryOfOrigin
   isAdult
   siteUrl
+  trailer {
+    id
+    site
+    thumbnail
+  }
   studios {
     nodes {
       id
@@ -134,7 +139,18 @@ export const MEDIA_DETAIL_QUERY = `
   query ($id: Int) {
     Media(id: $id) {
       ${MEDIA_FIELDS}
-      characters(page: 1, perPage: 10) {
+      nextAiringEpisode {
+        episode
+        airingAt
+        timeUntilAiring
+      }
+      externalLinks {
+        id
+        url
+        site
+        color
+      }
+      characters(page: 1, perPage: 8, sort: [ROLE, RELEVANCE]) {
         edges {
           role
           node {
@@ -146,12 +162,41 @@ export const MEDIA_DETAIL_QUERY = `
               large
             }
           }
+          voiceActors(language: JAPANESE, sort: [RELEVANCE]) {
+            id
+            name {
+              full
+            }
+            image {
+              medium
+              large
+            }
+            language: languageV2
+          }
         }
       }
       relations {
         edges {
           relationType
           node {
+            id
+            type
+            title {
+              romaji
+              english
+              native
+            }
+            coverImage {
+              large
+              color
+            }
+            averageScore
+          }
+        }
+      }
+      recommendations(page: 1, perPage: 8, sort: [RATING_DESC]) {
+        nodes {
+          mediaRecommendation {
             id
             type
             title {

@@ -1,12 +1,40 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import MediaCard from "@/components/MediaCard";
+import TrailerModal from "@/components/TrailerModal";
 import { AniListError, fetchMediaDetail } from "@/lib/anilist";
 import type { FuzzyDate, Media } from "@/lib/types";
 import styles from "./detail.module.css";
 
 interface DetailPageProps {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: DetailPageProps): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const res = await fetchMediaDetail(parseInt(id, 10));
+    const media = res.Media;
+    if (!media) return { title: "Media Not Found" };
+    const title = media.title.romaji || media.title.english || "Media Detail";
+    const plainDesc = media.description
+      ? media.description.replace(/<[^>]*>?/gm, "").slice(0, 160)
+      : "Discover anime and manga on Manga & Anime.";
+    return {
+      title: `${title} | Manga & Anime`,
+      description: plainDesc,
+      openGraph: {
+        title,
+        description: plainDesc,
+        images: media.coverImage.extraLarge ? [media.coverImage.extraLarge] : [],
+      },
+    };
+  } catch {
+    return { title: "Media Detail | Manga & Anime" };
+  }
 }
 
 function formatDate(date: FuzzyDate): string {
@@ -16,12 +44,18 @@ function formatDate(date: FuzzyDate): string {
   return `${date.year}-${month}-${day}`;
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <p className={styles.detailRow}>
-      <span className={styles.detailLabel}>{label}:</span> {value}
-    </p>
-  );
+function formatTimeUntil(seconds: number): string {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+function formatRelationLabel(type: string | null): string {
+  if (!type) return "Related";
+  return type.replace(/_/g, " ");
 }
 
 export default async function MediaDetailPage({ params }: DetailPageProps) {
@@ -47,8 +81,8 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
     return (
       <main className={styles.notFound}>
         <p>{errorMessage ?? "Media not found."}</p>
-        <Link href="/browse" className={styles.button}>
-          Back to Browse
+        <Link href="/browse" className={styles.backButton}>
+          ← Back to Browse
         </Link>
       </main>
     );
@@ -57,155 +91,324 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
   const mainTitle =
     media.title.romaji ?? media.title.english ?? media.title.native ?? "Untitled";
 
+  const recommendations = (media.recommendations?.nodes ?? [])
+    .map((node) => node.mediaRecommendation)
+    .filter(Boolean);
+
   return (
-    <main className="flex flex-1 flex-col">
-      {media.bannerImage ? (
-        <div className={styles.banner}>
+    <main className={styles.page}>
+      {/* Cinematic Banner */}
+      <div className={styles.bannerWrap}>
+        {media.bannerImage ? (
           <Image
             src={media.bannerImage}
             alt=""
             fill
+            priority
             sizes="100vw"
             className={styles.bannerImage}
           />
-        </div>
-      ) : null}
-
-      <div className={styles.layout}>
-        <div className={styles.coverWrap}>
-          {media.coverImage.extraLarge ?? media.coverImage.large ? (
-            <Image
-              src={media.coverImage.extraLarge ?? media.coverImage.large ?? ""}
-              alt={mainTitle}
-              width={230}
-              height={345}
-              className={styles.coverImage}
-            />
-          ) : null}
-        </div>
-
-        <div className={styles.info}>
-          <h1 className={styles.title}>{mainTitle}</h1>
-          {media.title.english && media.title.english !== mainTitle ? (
-            <h2 className={styles.subtitle}>{media.title.english}</h2>
-          ) : null}
-          {media.title.native ? (
-            <h2 className={styles.subtitle}>{media.title.native}</h2>
-          ) : null}
-
-          <div className={styles.badgeRow}>
-            <span className={styles.badge}>{media.type}</span>
-            {media.format ? (
-              <span className={styles.badge}>{media.format}</span>
-            ) : null}
-            {media.status ? (
-              <span className={styles.badge}>{media.status}</span>
-            ) : null}
-            {media.averageScore != null ? (
-              <span className={styles.badge}>
-                Score: {media.averageScore}
-              </span>
-            ) : null}
-          </div>
-
-          {media.description ? (
-            <div
-              className={styles.description}
-              dangerouslySetInnerHTML={{ __html: media.description }}
-            />
-          ) : null}
-
-          <div className={styles.details}>
-            {media.popularity != null ? (
-              <DetailRow label="Popularity" value={String(media.popularity)} />
-            ) : null}
-            {media.season && media.seasonYear ? (
-              <DetailRow label="Season" value={`${media.season} ${media.seasonYear}`} />
-            ) : null}
-            {media.startDate.year ? (
-              <DetailRow label="Details" value={formatDate(media.startDate)} />
-            ) : null}
-            {media.episodes != null ? (
-              <DetailRow label="Episodes" value={String(media.episodes)} />
-            ) : null}
-            {media.chapters != null ? (
-              <DetailRow label="Chapters" value={String(media.chapters)} />
-            ) : null}
-            {media.volumes != null ? (
-              <DetailRow label="Volumes" value={String(media.volumes)} />
-            ) : null}
-            {media.duration != null ? (
-              <DetailRow label="Duration" value={`${media.duration} min`} />
-            ) : null}
-            {media.source ? (
-              <DetailRow label="Source" value={media.source} />
-            ) : null}
-            {media.countryOfOrigin ? (
-              <DetailRow label="Country" value={media.countryOfOrigin} />
-            ) : null}
-            {media.studios?.nodes?.length ? (
-              <DetailRow
-                label="Studios"
-                value={media.studios.nodes.map((s) => s.name).join(", ")}
-              />
-            ) : null}
-          </div>
-
-          {media.genres.length > 0 ? (
-            <div className={styles.badgeRow}>
-              {media.genres.map((g) => (
-                <Link
-                  key={g}
-                  href={`/browse?genre=${encodeURIComponent(g)}`}
-                  className={styles.badge}
-                >
-                  {g}
-                </Link>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        ) : null}
+        <div className={styles.bannerOverlay} />
       </div>
 
-      {media.characters?.edges?.length ? (
-        <section className={styles.section}>
-          <h2 className={styles.sectionHeading}>Characters</h2>
-          <div className={styles.charGrid}>
-            {media.characters.edges.map((edge) =>
-              edge.node ? (
-                <div key={edge.node.id} className={styles.charCard}>
-                  {edge.node.image?.large ? (
-                    <Image
-                      src={edge.node.image.large}
-                      alt={edge.node.name.full ?? ""}
-                      width={64}
-                      height={64}
-                      className={styles.charImage}
-                    />
-                  ) : null}
-                  <div className={styles.charInfo}>
-                    <p className={styles.charName}>{edge.node.name.full}</p>
-                    <p className={styles.charRole}>{edge.role}</p>
-                  </div>
-                </div>
-              ) : null,
-            )}
-          </div>
-        </section>
-      ) : null}
+      <div className={styles.container}>
+        <div className={styles.layout}>
+          {/* Left Column: Cover, Trailer, Metadata & Links */}
+          <aside className={styles.sidebar}>
+            <div className={styles.coverWrap}>
+              {media.coverImage.extraLarge ?? media.coverImage.large ? (
+                <Image
+                  src={
+                    media.coverImage.extraLarge ??
+                    media.coverImage.large ??
+                    ""
+                  }
+                  alt={mainTitle}
+                  fill
+                  priority
+                  sizes="(max-width: 768px) 260px, 280px"
+                  className={styles.coverImage}
+                />
+              ) : null}
 
-      {media.relations?.edges?.length ? (
-        <section className={styles.section}>
-          <h2 className={styles.sectionHeading}>Related Media</h2>
-          <div className={styles.relGrid}>
-            {media.relations.edges.map((edge, i) =>
-              edge.node ? (
-                <MediaCard key={`${edge.node.id}-${i}`} media={edge.node} />
-              ) : null,
+              {media.averageScore != null && (
+                <div className={styles.scoreBadge}>
+                  <span>★</span>
+                  <span>{media.averageScore}%</span>
+                </div>
+              )}
+            </div>
+
+            {/* Trailer Modal Button */}
+            <TrailerModal trailer={media.trailer} title={mainTitle} />
+
+            {/* Information Card */}
+            <div className={styles.metaCard}>
+              <span className={styles.metaTitle}>Information</span>
+
+              <div className={styles.metaRow}>
+                <span className={styles.metaLabel}>Type</span>
+                <span className={styles.metaValue}>{media.type}</span>
+              </div>
+
+              {media.format && (
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Format</span>
+                  <span className={styles.metaValue}>
+                    {media.format.replace(/_/g, " ")}
+                  </span>
+                </div>
+              )}
+
+              {media.status && (
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Status</span>
+                  <span className={styles.metaValue}>
+                    {media.status.replace(/_/g, " ")}
+                  </span>
+                </div>
+              )}
+
+              {media.episodes != null && (
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Episodes</span>
+                  <span className={styles.metaValue}>{media.episodes}</span>
+                </div>
+              )}
+
+              {media.duration != null && (
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Duration</span>
+                  <span className={styles.metaValue}>{media.duration} mins</span>
+                </div>
+              )}
+
+              {media.chapters != null && (
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Chapters</span>
+                  <span className={styles.metaValue}>{media.chapters}</span>
+                </div>
+              )}
+
+              {media.volumes != null && (
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Volumes</span>
+                  <span className={styles.metaValue}>{media.volumes}</span>
+                </div>
+              )}
+
+              {media.season && media.seasonYear ? (
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Season</span>
+                  <span className={styles.metaValue}>
+                    {media.season} {media.seasonYear}
+                  </span>
+                </div>
+              ) : null}
+
+              {media.startDate.year ? (
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Aired</span>
+                  <span className={styles.metaValue}>
+                    {formatDate(media.startDate)}
+                  </span>
+                </div>
+              ) : null}
+
+              {media.studios?.nodes?.length ? (
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Studio</span>
+                  <span className={styles.metaValue}>
+                    {media.studios.nodes.map((s) => s.name).join(", ")}
+                  </span>
+                </div>
+              ) : null}
+
+              {media.source && (
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Source</span>
+                  <span className={styles.metaValue}>
+                    {media.source.replace(/_/g, " ")}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* External Links */}
+            {media.externalLinks && media.externalLinks.length > 0 && (
+              <div className={styles.linksCard}>
+                <span className={styles.metaTitle}>Official Links</span>
+                <div className={styles.linksList}>
+                  {media.externalLinks.slice(0, 6).map((link) => (
+                    <a
+                      key={link.id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.extLink}
+                    >
+                      {link.site}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </aside>
+
+          {/* Right Main Column: Titles, Synopsis, Cast, Relations & Recommendations */}
+          <div className={styles.mainCol}>
+            <div className={styles.headerInfo}>
+              <h1 className={styles.title}>{mainTitle}</h1>
+              <div className={styles.subtitles}>
+                {media.title.english && media.title.english !== mainTitle ? (
+                  <span className={styles.englishTitle}>
+                    {media.title.english}
+                  </span>
+                ) : null}
+                {media.title.native ? (
+                  <span className={styles.nativeTitle}>
+                    {media.title.native}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            {/* Airing episode notification */}
+            {media.nextAiringEpisode && (
+              <div className={styles.airingAlert}>
+                <span className={styles.pulseDot} />
+                <span>
+                  Episode {media.nextAiringEpisode.episode} airs in{" "}
+                  {formatTimeUntil(media.nextAiringEpisode.timeUntilAiring)}
+                </span>
+              </div>
+            )}
+
+            {/* Genres */}
+            {media.genres.length > 0 && (
+              <div className={styles.genres}>
+                {media.genres.map((g) => (
+                  <Link
+                    key={g}
+                    href={`/browse?genre=${encodeURIComponent(g)}`}
+                    className={styles.genreTag}
+                  >
+                    {g}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Synopsis */}
+            {media.description && (
+              <section className={styles.synopsisSection}>
+                <h2 className={styles.sectionTitle}>Synopsis</h2>
+                <div
+                  className={styles.description}
+                  dangerouslySetInnerHTML={{ __html: media.description }}
+                />
+              </section>
+            )}
+
+            {/* Characters & Voice Actors */}
+            {media.characters?.edges?.length ? (
+              <section className={styles.charSection}>
+                <h2 className={styles.sectionTitle}>Characters & Cast</h2>
+                <div className={styles.charGrid}>
+                  {media.characters.edges.map((edge) => {
+                    if (!edge.node) return null;
+                    const char = edge.node;
+                    const va = edge.voiceActors?.[0];
+
+                    return (
+                      <div key={char.id} className={styles.charCard}>
+                        {/* Character info */}
+                        <div className={styles.charSide}>
+                          {char.image?.large ? (
+                            <Image
+                              src={char.image.large}
+                              alt={char.name?.full ?? "Character"}
+                              width={58}
+                              height={72}
+                              className={styles.charThumb}
+                            />
+                          ) : null}
+                          <div className={styles.charTexts}>
+                            <p className={styles.charName}>
+                              {char.name?.full ?? "Unknown"}
+                            </p>
+                            <p className={styles.charRole}>
+                              {edge.role?.toLowerCase() ?? "Character"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Japanese Voice Actor info if available */}
+                        {va ? (
+                          <div className={styles.vaSide}>
+                            <div className={styles.vaTexts}>
+                              <p className={styles.vaName}>
+                                {va.name?.full ?? "Voice Actor"}
+                              </p>
+                              <p className={styles.vaRole}>Japanese</p>
+                            </div>
+                            {va.image?.medium ?? va.image?.large ? (
+                              <Image
+                                src={
+                                  va.image.medium ?? va.image.large ?? ""
+                                }
+                                alt={va.name?.full ?? "Voice Actor"}
+                                width={58}
+                                height={72}
+                                className={styles.charThumb}
+                              />
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+
+            {/* Related Media */}
+            {media.relations?.edges?.length ? (
+              <section className={styles.relationsSection}>
+                <h2 className={styles.sectionTitle}>Related Media</h2>
+                <div className={styles.relationGrid}>
+                  {media.relations.edges.map((edge, i) =>
+                    edge.node ? (
+                      <div
+                        key={`${edge.node.id}-${i}`}
+                        className={styles.relationCardWrap}
+                      >
+                        <span className={styles.relationBadge}>
+                          {formatRelationLabel(edge.relationType)}
+                        </span>
+                        <MediaCard media={edge.node} />
+                      </div>
+                    ) : null,
+                  )}
+                </div>
+              </section>
+            ) : null}
+
+            {/* Recommendations */}
+            {recommendations.length > 0 && (
+              <section className={styles.recsSection}>
+                <h2 className={styles.sectionTitle}>You Might Also Like</h2>
+                <div className={styles.recsGrid}>
+                  {recommendations.map((rec) =>
+                    rec ? <MediaCard key={rec.id} media={rec} /> : null,
+                  )}
+                </div>
+              </section>
             )}
           </div>
-        </section>
-      ) : null}
+        </div>
+      </div>
     </main>
   );
 }

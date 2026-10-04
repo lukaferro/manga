@@ -52,6 +52,13 @@ export interface Studio {
   name: string;
 }
 
+export interface VoiceActor {
+  id: number;
+  name: { full: string | null };
+  image: { medium: string | null; large: string | null };
+  language: string | null;
+}
+
 export interface CharacterEdge {
   role: string | null;
   node: {
@@ -59,11 +66,41 @@ export interface CharacterEdge {
     name: { full: string | null };
     image: { large: string | null };
   } | null;
+  voiceActors?: VoiceActor[] | null;
 }
 
 export interface RelationEdge {
   relationType: string | null;
   node: {
+    id: number;
+    type: MediaType;
+    title: Title;
+    coverImage: CoverImage;
+    averageScore: number | null;
+  } | null;
+}
+
+export interface Trailer {
+  id: string | null;
+  site: string | null;
+  thumbnail: string | null;
+}
+
+export interface NextAiringEpisode {
+  episode: number;
+  airingAt: number;
+  timeUntilAiring: number;
+}
+
+export interface ExternalLink {
+  id: number;
+  url: string;
+  site: string;
+  color: string | null;
+}
+
+export interface RecommendationNode {
+  mediaRecommendation: {
     id: number;
     type: MediaType;
     title: Title;
@@ -106,8 +143,12 @@ export interface Media {
   isAdult: boolean | null;
   siteUrl: string | null;
   studios: { nodes: Studio[] } | null;
+  trailer: Trailer | null;
+  nextAiringEpisode: NextAiringEpisode | null;
+  externalLinks: ExternalLink[] | null;
   characters: { edges: CharacterEdge[] } | null;
   relations: { edges: RelationEdge[] } | null;
+  recommendations: { nodes: RecommendationNode[] } | null;
 }
 
 export interface PageInfo {
