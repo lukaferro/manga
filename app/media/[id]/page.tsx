@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import MediaCard from "@/components/MediaCard";
 import TrailerModal from "@/components/TrailerModal";
+import BackButton from "@/components/BackButton";
 import { AniListError, fetchMediaDetail } from "@/lib/anilist";
 import type { FuzzyDate, Media } from "@/lib/types";
 import styles from "./detail.module.css";
@@ -97,6 +98,11 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
 
   return (
     <main className={styles.page}>
+      {/* Floating Back Button */}
+      <div className={styles.backButtonWrap}>
+        <BackButton label="Back" fallbackHref="/browse" />
+      </div>
+
       {/* Cinematic Banner */}
       <div className={styles.bannerWrap}>
         {media.bannerImage ? (
@@ -256,7 +262,7 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
             )}
           </aside>
 
-          {/* Right Main Column: Titles, Synopsis, Cast, Relations & Recommendations */}
+          {/* Right Main Column: Titles, Status Alerts, Synopsis, Cast, Relations & Recommendations */}
           <div className={styles.mainCol}>
             <div className={styles.headerInfo}>
               <h1 className={styles.title}>{mainTitle}</h1>
@@ -274,16 +280,55 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
               </div>
             </div>
 
-            {/* Airing episode notification */}
-            {media.nextAiringEpisode && (
-              <div className={styles.airingAlert}>
-                <span className={styles.pulseDot} />
-                <span>
-                  Episode {media.nextAiringEpisode.episode} airs in{" "}
-                  {formatTimeUntil(media.nextAiringEpisode.timeUntilAiring)}
-                </span>
-              </div>
-            )}
+            {/* Status & Next Airing Episode Banner */}
+            <div className={styles.statusAlertGroup}>
+              {media.nextAiringEpisode ? (
+                <div className={styles.airingAlert}>
+                  <div className={styles.alertIconPulse}>
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                  </div>
+                  <div className={styles.alertContent}>
+                    <span className={styles.alertTitle}>
+                      Episode {media.nextAiringEpisode.episode} Countdown
+                    </span>
+                    <span className={styles.alertTime}>
+                      Airing in{" "}
+                      {formatTimeUntil(media.nextAiringEpisode.timeUntilAiring)}
+                    </span>
+                  </div>
+                </div>
+              ) : media.status === "RELEASING" ? (
+                <div className={styles.statusAlertReleasing}>
+                  <span className={styles.greenDot} />
+                  <span>Currently Releasing</span>
+                </div>
+              ) : media.status === "FINISHED" ? (
+                <div className={styles.statusAlertFinished}>
+                  <span>✓ Completed</span>
+                  {media.episodes ? <span> · {media.episodes} Episodes</span> : null}
+                  {media.chapters ? <span> · {media.chapters} Chapters</span> : null}
+                </div>
+              ) : media.status === "NOT_YET_RELEASED" ? (
+                <div className={styles.statusAlertUpcoming}>
+                  <span>🗓 Upcoming Release</span>
+                  {media.startDate?.year ? (
+                    <span> · Expected {formatDate(media.startDate)}</span>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
 
             {/* Genres */}
             {media.genres.length > 0 && (

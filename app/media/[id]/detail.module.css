@@ -21,31 +21,19 @@
   color: var(--muted);
 }
 
-.backButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1.4rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 0.65rem;
-  color: var(--foreground);
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.backButton:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+/* Floating Back Button Wrapper */
+.backButtonWrap {
+  position: absolute;
+  top: 5.5rem;
+  left: max(1.5rem, calc((100vw - 76rem) / 2 + 1.5rem));
+  z-index: 20;
 }
 
 /* Banner */
 .bannerWrap {
   position: relative;
   width: 100%;
-  height: clamp(200px, 35vw, 380px);
+  height: clamp(220px, 35vw, 380px);
   background-color: var(--surface);
   overflow: hidden;
 }
@@ -59,8 +47,8 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.2) 0%,
-    rgba(0, 0, 0, 0.4) 40%,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.5) 45%,
     var(--background) 100%
   );
 }
@@ -225,7 +213,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.75rem;
   min-width: 0;
 }
 
@@ -262,33 +250,102 @@
   opacity: 0.8;
 }
 
-/* Airing Episode Alert */
+/* Airing & Status Alerts */
+.statusAlertGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
 .airingAlert {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.85rem 1.2rem;
+  gap: 0.85rem;
+  padding: 0.75rem 1.25rem;
   background-color: var(--accent-soft);
-  border: 1px solid var(--accent);
-  border-radius: 0.75rem;
+  border: 1.5px solid var(--accent);
+  border-radius: 0.85rem;
   color: var(--accent);
-  font-size: 0.9375rem;
-  font-weight: 600;
+  box-shadow: 0 4px 15px var(--accent-soft);
 }
 
-.pulseDot {
-  width: 10px;
-  height: 10px;
+.alertIconPulse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
   background-color: var(--accent);
+  color: #ffffff;
   border-radius: 50%;
-  animation: pulseDot 1.5s infinite ease-in-out;
   flex-shrink: 0;
 }
 
-@keyframes pulseDot {
-  0% { transform: scale(0.9); opacity: 1; }
-  50% { transform: scale(1.3); opacity: 0.4; }
-  100% { transform: scale(0.9); opacity: 1; }
+.alertContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.alertTitle {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+
+.alertTime {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.statusAlertFinished {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  color: var(--muted);
+}
+
+.statusAlertReleasing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background-color: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 2rem;
+  color: #16a34a;
+}
+
+.greenDot {
+  width: 8px;
+  height: 8px;
+  background-color: #16a34a;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #16a34a;
+}
+
+.statusAlertUpcoming {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background-color: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 2rem;
+  color: #2563eb;
 }
 
 /* Genres */
