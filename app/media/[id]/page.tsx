@@ -148,6 +148,8 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
               mediaType={media.type}
               maxEpisodes={media.episodes}
               maxChapters={media.chapters}
+              mediaTitle={mainTitle}
+              coverImage={media.coverImage.large ?? media.coverImage.extraLarge ?? undefined}
             />
 
             {/* Information Card */}
