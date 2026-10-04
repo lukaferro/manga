@@ -4,6 +4,7 @@ import Link from "next/link";
 import MediaCard from "@/components/MediaCard";
 import TrailerModal from "@/components/TrailerModal";
 import BackButton from "@/components/BackButton";
+import AiringCountdown from "@/components/AiringCountdown";
 import { AniListError, fetchMediaDetail } from "@/lib/anilist";
 import type { FuzzyDate, Media } from "@/lib/types";
 import styles from "./detail.module.css";
@@ -43,15 +44,6 @@ function formatDate(date: FuzzyDate): string {
   const month = date.month ? String(date.month).padStart(2, "0") : "??";
   const day = date.day ? String(date.day).padStart(2, "0") : "??";
   return `${date.year}-${month}-${day}`;
-}
-
-function formatTimeUntil(seconds: number): string {
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
 }
 
 function formatRelationLabel(type: string | null): string {
@@ -283,36 +275,14 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
             {/* Status & Next Airing Episode Banner */}
             <div className={styles.statusAlertGroup}>
               {media.nextAiringEpisode ? (
-                <div className={styles.airingAlert}>
-                  <div className={styles.alertIconPulse}>
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                  </div>
-                  <div className={styles.alertContent}>
-                    <span className={styles.alertTitle}>
-                      Episode {media.nextAiringEpisode.episode} Countdown
-                    </span>
-                    <span className={styles.alertTime}>
-                      Airing in{" "}
-                      {formatTimeUntil(media.nextAiringEpisode.timeUntilAiring)}
-                    </span>
-                  </div>
-                </div>
+                <AiringCountdown
+                  airingAt={media.nextAiringEpisode.airingAt}
+                  episode={media.nextAiringEpisode.episode}
+                />
               ) : media.status === "RELEASING" ? (
                 <div className={styles.statusAlertReleasing}>
                   <span className={styles.greenDot} />
-                  <span>Currently Releasing</span>
+                  <span>Currently Releasing (Ongoing)</span>
                 </div>
               ) : media.status === "FINISHED" ? (
                 <div className={styles.statusAlertFinished}>
