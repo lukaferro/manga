@@ -50,6 +50,47 @@ const SORTS: MediaSort[] = [
   "TITLE_ROMAJI",
 ];
 
+const TYPE_LABELS: Record<string, string> = {
+  ANIME: "Anime",
+  MANGA: "Manga",
+};
+
+const SEASON_LABELS: Record<string, string> = {
+  WINTER: "Winter",
+  SPRING: "Spring",
+  SUMMER: "Summer",
+  FALL: "Fall",
+};
+
+const FORMAT_LABELS: Record<string, string> = {
+  TV: "TV",
+  TV_SHORT: "TV Short",
+  MOVIE: "Movie",
+  SPECIAL: "Special",
+  OVA: "OVA",
+  ONA: "ONA",
+  MUSIC: "Music",
+  MANGA: "Manga",
+  NOVEL: "Novel",
+  ONE_SHOT: "One Shot",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  RELEASING: "Releasing",
+  FINISHED: "Finished",
+  NOT_YET_RELEASED: "Not Yet Released",
+  CANCELLED: "Cancelled",
+  HIATUS: "Hiatus",
+};
+
+const SORT_LABELS: Record<string, string> = {
+  POPULARITY_DESC: "Popularity",
+  TRENDING_DESC: "Trending",
+  SCORE_DESC: "Score",
+  START_DATE_DESC: "Start Date",
+  TITLE_ROMAJI: "Title",
+};
+
 type RawParams = Record<string, string | string[] | undefined>;
 
 function first(value: string | string[] | undefined): string | undefined {
@@ -90,6 +131,7 @@ function buildHref(args: BuildHrefArgs): string {
 }
 
 async function MediaGrid({
+
   params,
 }: {
   params: {
@@ -128,25 +170,20 @@ async function MediaGrid({
 
   if (errorMessage) {
     return (
-      <div className={styles.errorState}>
+      <div style={{ 
+        textAlign: 'center', 
+        padding: '3rem', 
+        color: 'var(--muted)', 
+        fontSize: '1.1rem' 
+      }}>
         <p>Something went wrong while fetching the data.</p>
-        <p style={{ fontSize: "0.9rem", marginTop: "0.5rem" }}>
-          Please try adjusting your filters or refresh the page.
-        </p>
+        <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>Please try adjusting your filters or refresh the page.</p>
       </div>
     );
   }
 
   if (!result || result.media.length === 0) {
-    return (
-      <div className={styles.emptyState}>
-        <div className={styles.emptyIcon}>🔍</div>
-        <p className={styles.emptyTitle}>No anime or manga found</p>
-        <p className={styles.emptySubtitle}>
-          Try loosening your filters or searching for a different title.
-        </p>
-      </div>
-    );
+    return <p style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted)' }}>No results found.</p>;
   }
 
   const currentPage = result.pageInfo.currentPage ?? 1;
