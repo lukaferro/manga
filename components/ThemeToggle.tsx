@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useLayoutEffect, useSyncExternalStore } from "react";
+import { useLayoutEffect, useSyncExternalStore } from "react";
 import {
   readThemeCookie,
   saveTheme,

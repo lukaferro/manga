@@ -308,3 +308,8 @@
   }
 }
 
+
+/* A custom clear button is rendered instead of the native one */
+.searchInput::-webkit-search-cancel-button {
+  display: none;
+}

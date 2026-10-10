@@ -1,243 +1,53 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { Suspense } from "react";
-import MediaCard from "@/components/MediaCard";
 import FilterBar from "@/components/FilterBar";
+import InfiniteGrid from "@/components/browse/InfiniteGrid";
+import { AniListError, fetchGenres, fetchMediaList } from "@/lib/anilist";
 import {
-  fetchGenres,
-  fetchMediaList,
-  AniListError,
-} from "@/lib/anilist";
-import type {
-  MediaFormat,
-  MediaSeason,
-  MediaSort,
-  MediaStatus,
-  MediaType,
-} from "@/lib/types";
+  filtersToQuery,
+  parseBrowseParams,
+  toMediaListParams,
+  type BrowseFilters,
+} from "@/lib/browse-filters";
 import styles from "./browse.module.css";
 import { LoadingGrid } from "./loading";
 
-const PER_PAGE = 24;
-
-const TYPES: (MediaType | "")[] = ["", "ANIME", "MANGA"];
-const SEASONS: (MediaSeason | "")[] = ["", "WINTER", "SPRING", "SUMMER", "FALL"];
-const FORMATS: (MediaFormat | "")[] = [
-  "",
-  "TV",
-  "TV_SHORT",
-  "MOVIE",
-  "SPECIAL",
-  "OVA",
-  "ONA",
-  "MUSIC",
-  "MANGA",
-  "NOVEL",
-  "ONE_SHOT",
-];
-const STATUSES: (MediaStatus | "")[] = [
-  "",
-  "RELEASING",
-  "FINISHED",
-  "NOT_YET_RELEASED",
-  "CANCELLED",
-  "HIATUS",
-];
-const SORTS: MediaSort[] = [
-  "POPULARITY_DESC",
-  "TRENDING_DESC",
-  "SCORE_DESC",
-  "START_DATE_DESC",
-  "TITLE_ROMAJI",
-];
-
-const TYPE_LABELS: Record<string, string> = {
-  ANIME: "Anime",
-  MANGA: "Manga",
-};
-
-const SEASON_LABELS: Record<string, string> = {
-  WINTER: "Winter",
-  SPRING: "Spring",
-  SUMMER: "Summer",
-  FALL: "Fall",
-};
-
-const FORMAT_LABELS: Record<string, string> = {
-  TV: "TV",
-  TV_SHORT: "TV Short",
-  MOVIE: "Movie",
-  SPECIAL: "Special",
-  OVA: "OVA",
-  ONA: "ONA",
-  MUSIC: "Music",
-  MANGA: "Manga",
-  NOVEL: "Novel",
-  ONE_SHOT: "One Shot",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  RELEASING: "Releasing",
-  FINISHED: "Finished",
-  NOT_YET_RELEASED: "Not Yet Released",
-  CANCELLED: "Cancelled",
-  HIATUS: "Hiatus",
-};
-
-const SORT_LABELS: Record<string, string> = {
-  POPULARITY_DESC: "Popularity",
-  TRENDING_DESC: "Trending",
-  SCORE_DESC: "Score",
-  START_DATE_DESC: "Start Date",
-  TITLE_ROMAJI: "Title",
+export const metadata: Metadata = {
+  title: "Browse | Manga & Anime",
 };
 
 type RawParams = Record<string, string | string[] | undefined>;
 
-function first(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function cleanParam(value: string | undefined): string | undefined {
-  return value && value !== "" ? value : undefined;
-}
-
-function asEnumValue<T extends string>(
-  value: string | undefined,
-  allowed: readonly T[],
-): T | undefined {
-  return value && allowed.includes(value as T) ? (value as T) : undefined;
-}
-
-interface BuildHrefArgs {
-  page: number;
-  search?: string;
-  type?: string;
-  genre?: string;
-  sort?: string;
-  season?: string;
-  year?: string;
-  format?: string;
-  status?: string;
-}
-
-function buildHref(args: BuildHrefArgs): string {
-  const url = new URLSearchParams();
-  for (const [key, value] of Object.entries(args)) {
-    if (key === "page") continue;
-    if (value && value !== "") url.set(key, value);
-  }
-  url.set("page", String(args.page));
-  return `/browse?${url.toString()}`;
-}
-
-async function MediaGrid({
-
-  params,
-}: {
-  params: {
-    page: number;
-    search?: string;
-    type?: MediaType;
-    genre?: string;
-    sort?: MediaSort;
-    season?: MediaSeason;
-    year?: number;
-    format?: MediaFormat;
-    status?: MediaStatus;
-  };
-}) {
+async function MediaGrid({ filters, page }: { filters: BrowseFilters; page: number }) {
   let result;
-  let errorMessage: string | null = null;
-
   try {
-    const mediaData = await fetchMediaList({
-      page: params.page,
-      perPage: PER_PAGE,
-      search: params.search,
-      type: params.type,
-      genre: params.genre,
-      season: params.season,
-      seasonYear: params.year,
-      format: params.format,
-      status: params.status,
-      sort: params.sort,
-    });
-    result = mediaData.Page;
+    result = (await fetchMediaList(toMediaListParams(filters, page))).Page;
   } catch (err) {
-    errorMessage =
-      err instanceof AniListError ? err.message : "Error loading content.";
-  }
-
-  if (errorMessage) {
+    console.error("Browse fetch failed:", err instanceof AniListError ? err.message : err);
     return (
-      <div style={{ 
-        textAlign: 'center', 
-        padding: '3rem', 
-        color: 'var(--muted)', 
-        fontSize: '1.1rem' 
-      }}>
+      <div className={styles.errorState}>
         <p>Something went wrong while fetching the data.</p>
-        <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>Please try adjusting your filters or refresh the page.</p>
+        <p className={styles.emptySubtitle}>Please try adjusting your filters or refresh the page.</p>
       </div>
     );
   }
 
-  if (!result || result.media.length === 0) {
-    return <p style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted)' }}>No results found.</p>;
+  if (result.media.length === 0) {
+    return (
+      <div className={styles.emptyState}>
+        <p className={styles.emptyTitle}>No results found</p>
+        <p className={styles.emptySubtitle}>Try a different search or fewer filters.</p>
+      </div>
+    );
   }
 
-  const currentPage = result.pageInfo.currentPage ?? 1;
-
   return (
-    <>
-      <div className={styles.grid}>
-        {result.media.map((m) => (
-          <MediaCard key={m.id} media={m} />
-        ))}
-      </div>
-
-      <nav className={styles.pagination}>
-        {currentPage > 1 ? (
-          <Link
-            className={styles.button}
-            href={buildHref({
-              page: currentPage - 1,
-              search: params.search,
-              type: params.type,
-              genre: params.genre,
-              sort: params.sort,
-              season: params.season,
-              year: params.year ? String(params.year) : undefined,
-              format: params.format,
-              status: params.status,
-            })}
-          >
-            Previous
-          </Link>
-        ) : null}
-        <span className={styles.pageInfo}>
-          Page {currentPage}
-        </span>
-        {result.pageInfo.hasNextPage ? (
-          <Link
-            className={styles.button}
-            href={buildHref({
-              page: currentPage + 1,
-              search: params.search,
-              type: params.type,
-              genre: params.genre,
-              sort: params.sort,
-              season: params.season,
-              year: params.year ? String(params.year) : undefined,
-              format: params.format,
-              status: params.status,
-            })}
-          >
-            Next
-          </Link>
-        ) : null}
-      </nav>
-    </>
+    <InfiniteGrid
+      initialMedia={result.media}
+      initialPage={result.pageInfo.currentPage ?? page}
+      initialHasNextPage={result.pageInfo.hasNextPage}
+      query={filtersToQuery(filters)}
+    />
   );
 }
 
@@ -247,43 +57,17 @@ export default async function BrowsePage({
   searchParams: Promise<RawParams>;
 }) {
   const raw = await searchParams;
-
-  const page = Math.max(1, parseInt(first(raw.page) ?? "1", 10) || 1);
-  const search = cleanParam(first(raw.search));
-  const type = asEnumValue(cleanParam(first(raw.type)), TYPES as readonly MediaType[]);
-  const genre = cleanParam(first(raw.genre));
-  const sort = asEnumValue(cleanParam(first(raw.sort)), SORTS as readonly MediaSort[]);
-  const season = asEnumValue(cleanParam(first(raw.season)), SEASONS as readonly MediaSeason[]);
-  const yearValue = cleanParam(first(raw.year));
-  const year = yearValue ? Number.parseInt(yearValue, 10) : undefined;
-  const format = asEnumValue(cleanParam(first(raw.format)), FORMATS as readonly MediaFormat[]);
-  const status = asEnumValue(cleanParam(first(raw.status)), STATUSES as readonly MediaStatus[]);
-
-  const genreData = await fetchGenres();
-  const genres = genreData.GenreCollection;
+  const { filters, page } = parseBrowseParams((key) => raw[key]);
+  const genres = (await fetchGenres()).GenreCollection;
+  const query = filtersToQuery(filters);
 
   return (
     <main className={styles.page}>
       <h1 className={styles.title}>Browse</h1>
       <FilterBar initialGenres={genres} />
-      
-      <Suspense 
-        key={`${search}-${type}-${genre}-${sort}-${season}-${year}-${format}-${status}-${page}`} 
-        fallback={<LoadingGrid />}
-      >
-        <MediaGrid 
-          params={{
-            page,
-            search,
-            type,
-            genre,
-            sort,
-            season,
-            year: Number.isNaN(year) ? undefined : year,
-            format,
-            status,
-          }} 
-        />
+
+      <Suspense key={`${query}|${page}`} fallback={<LoadingGrid />}>
+        <MediaGrid filters={filters} page={page} />
       </Suspense>
     </main>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import styles from "./CustomSelect.module.css";
 
 export interface Option {
@@ -18,6 +18,11 @@ interface CustomSelectProps {
   disabled?: boolean;
 }
 
+/**
+ * Select with a styled popup, following the WAI-ARIA listbox pattern:
+ * arrows/Home/End move the active option, Enter selects, Escape closes,
+ * optional type-to-filter input for long lists.
+ */
 export default function CustomSelect({
   label,
   options,
@@ -29,70 +34,130 @@ export default function CustomSelect({
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const baseId = useId();
+  const labelId = `${baseId}-label`;
+  const listId = `${baseId}-list`;
 
   const selectedOption = options.find((opt) => opt.value === value);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && isOpen) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (isOpen && searchable && searchInputRef.current) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
-    }
-    if (!isOpen) {
-      setFilterQuery("");
-    }
-  }, [isOpen, searchable]);
-
-  const filteredOptions = useMemo(() => {
-    if (!filterQuery.trim()) return options;
-    const q = filterQuery.toLowerCase();
-    return options.filter((opt) => opt.label.toLowerCase().includes(q));
-  }, [options, filterQuery]);
-
   const shouldShowSearch = searchable || options.length > 10;
+  const q = filterQuery.trim().toLowerCase();
+  const filteredOptions = q
+    ? options.filter((opt) => opt.label.toLowerCase().includes(q))
+    : options;
+
+  function open() {
+    if (disabled) return;
+    const selected = options.findIndex((o) => o.value === value);
+    setFilterQuery("");
+    setActiveIndex(Math.max(0, selected));
+    setIsOpen(true);
+  }
+
+  function close(returnFocus = true) {
+    setIsOpen(false);
+    setFilterQuery("");
+    if (returnFocus) buttonRef.current?.focus();
+  }
+
+  function choose(opt: Option | undefined) {
+    if (!opt) return;
+    onChange(opt.value);
+    close();
+  }
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Move focus into the popup so keyboard navigation works immediately
+    (shouldShowSearch ? searchInputRef.current : listRef.current)?.focus();
+
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setFilterQuery("");
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen, shouldShowSearch]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    listRef.current
+      ?.querySelector<HTMLElement>(`[data-index="${activeIndex}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex, isOpen]);
+
+  function handlePopupKeyDown(e: React.KeyboardEvent) {
+    const last = filteredOptions.length - 1;
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setActiveIndex((i) => Math.min(last, i + 1));
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setActiveIndex((i) => Math.max(0, i - 1));
+        break;
+      case "Home":
+        e.preventDefault();
+        setActiveIndex(0);
+        break;
+      case "End":
+        e.preventDefault();
+        setActiveIndex(last);
+        break;
+      case "Enter":
+        e.preventDefault();
+        choose(filteredOptions[activeIndex]);
+        break;
+      case "Escape":
+        e.preventDefault();
+        e.stopPropagation();
+        close();
+        break;
+      case "Tab":
+        close(false);
+        break;
+    }
+  }
+
+  const optionId = (i: number) => `${baseId}-opt-${i}`;
 
   return (
     <div
       className={`${styles.container} ${disabled ? styles.disabled : ""}`}
       ref={containerRef}
     >
-      <label className={styles.label}>{label}</label>
+      <span id={labelId} className={styles.label}>
+        {label}
+      </span>
       <div className={styles.selectWrapper}>
         <button
+          ref={buttonRef}
           type="button"
           disabled={disabled}
           className={`${styles.selectButton} ${isOpen ? styles.buttonActive : ""} ${
             value ? styles.buttonHasValue : ""
           }`}
-          onClick={() => !disabled && setIsOpen(!isOpen)}
+          onClick={() => (isOpen ? close() : open())}
+          onKeyDown={(e) => {
+            if (!isOpen && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+              e.preventDefault();
+              open();
+            }
+          }}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
+          aria-controls={isOpen ? listId : undefined}
+          aria-labelledby={`${labelId} ${baseId}-value`}
         >
-          <span className={styles.selectedText}>
+          <span id={`${baseId}-value`} className={styles.selectedText}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           <svg
@@ -105,6 +170,7 @@ export default function CustomSelect({
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden="true"
           >
             <path d="m6 9 6 6 6-6" />
           </svg>
@@ -119,28 +185,49 @@ export default function CustomSelect({
                   type="text"
                   className={styles.dropdownSearch}
                   placeholder={`Search ${label.toLowerCase()}...`}
+                  aria-label={`Filter ${label.toLowerCase()} options`}
+                  aria-controls={listId}
+                  aria-activedescendant={
+                    filteredOptions[activeIndex] ? optionId(activeIndex) : undefined
+                  }
                   value={filterQuery}
-                  onChange={(e) => setFilterQuery(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    setFilterQuery(e.target.value);
+                    setActiveIndex(0);
+                  }}
+                  onKeyDown={handlePopupKeyDown}
                 />
               </div>
             )}
-            <ul className={styles.optionsList} role="listbox">
+            <ul
+              ref={listRef}
+              id={listId}
+              className={styles.optionsList}
+              role="listbox"
+              aria-labelledby={labelId}
+              tabIndex={-1}
+              aria-activedescendant={
+                !shouldShowSearch && filteredOptions[activeIndex]
+                  ? optionId(activeIndex)
+                  : undefined
+              }
+              onKeyDown={handlePopupKeyDown}
+            >
               {filteredOptions.length === 0 ? (
                 <li className={styles.emptyOption}>No options found</li>
               ) : (
-                filteredOptions.map((opt) => {
+                filteredOptions.map((opt, i) => {
                   const isSelected = value === opt.value;
                   return (
                     <li
                       key={opt.value || "__all__"}
-                      className={`${styles.option} ${
-                        isSelected ? styles.selected : ""
+                      id={optionId(i)}
+                      data-index={i}
+                      className={`${styles.option} ${isSelected ? styles.selected : ""} ${
+                        i === activeIndex ? styles.optionActive : ""
                       }`}
-                      onClick={() => {
-                        onChange(opt.value);
-                        setIsOpen(false);
-                      }}
+                      onMouseMove={() => setActiveIndex(i)}
+                      onClick={() => choose(opt)}
                       role="option"
                       aria-selected={isSelected}
                     >
@@ -156,6 +243,7 @@ export default function CustomSelect({
                           strokeWidth="2.5"
                           strokeLinecap="round"
                           strokeLinejoin="round"
+                          aria-hidden="true"
                         >
                           <path d="M20 6 9 17l-5-5" />
                         </svg>
@@ -171,4 +259,3 @@ export default function CustomSelect({
     </div>
   );
 }
-

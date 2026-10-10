@@ -177,3 +177,11 @@
   color: var(--muted);
 }
 
+
+.optionActive {
+  background-color: var(--accent-soft);
+}
+
+.optionsList:focus {
+  outline: none;
+}
