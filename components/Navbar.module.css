@@ -101,3 +101,43 @@
     gap: 1rem;
   }
 }
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 6px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.links::-webkit-scrollbar {
+  display: none;
+}
+
+.link {
+  white-space: nowrap;
+}
+
+.linkActive {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.linkActive::after {
+  transform: scaleX(1);
+}
+
+@media (max-width: 640px) {
+  .links {
+    gap: 0.9rem;
+  }
+
+  .link {
+    font-size: 0.85rem;
+  }
+
+  .hideOnMobile {
+    display: none;
+  }
+}

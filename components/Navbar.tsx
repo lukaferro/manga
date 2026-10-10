@@ -9,6 +9,12 @@ import styles from "./Navbar.module.css";
 
 const FADE_RANGE = 240;
 
+const NAV_LINKS = [
+  { href: "/", label: "Home", hideOnMobile: true },
+  { href: "/browse", label: "Browse" },
+  { href: "/my-list", label: "My List" },
+];
+
 export default function Navbar() {
   const pathname = usePathname();
   const [scrollY, setScrollY] = useState(0);
@@ -31,12 +37,24 @@ export default function Navbar() {
         <Link href="/" className={styles.brand}>
           Manga&nbsp;&amp;&nbsp;Anime
         </Link>
-        <Link href="/" className={styles.link}>
-          Home
-        </Link>
-        <Link href="/browse" className={styles.link}>
-          Browse
-        </Link>
+        <div className={styles.links}>
+          {NAV_LINKS.map((link) => {
+            const active =
+              link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`${styles.link} ${active ? styles.linkActive : ""} ${
+                  link.hideOnMobile ? styles.hideOnMobile : ""
+                }`}
+                aria-current={active ? "page" : undefined}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </div>
       </nav>
       <div className={styles.controls}>
         <ThemeToggle labels={{ light: "Light", dark: "Dark" }} />

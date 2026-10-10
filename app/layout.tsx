@@ -3,6 +3,7 @@ import { Zen_Maru_Gothic, Yuji_Mai } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import ThemeScript from "@/components/ThemeScript";
+import { SessionProvider } from "@/components/SessionProvider";
 
 const zenMaruGothic = Zen_Maru_Gothic({
   variable: "--font-sans",
@@ -32,8 +33,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeScript />
       </head>
       <body className="flex min-h-full flex-col">
-        <Navbar />
-        {children}
+        <SessionProvider>
+          <Navbar />
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );

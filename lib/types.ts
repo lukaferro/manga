@@ -202,3 +202,24 @@ export interface MediaListEntry {
   progress: number | null;
   updatedAt?: number | null;
 }
+
+/** Lightweight media snapshot stored alongside list entries */
+export interface ListMedia {
+  id: number;
+  type: MediaType;
+  title: Title;
+  coverImage: Pick<CoverImage, "large" | "medium" | "color">;
+  format: MediaFormat | null;
+  status: MediaStatus | null;
+  episodes: number | null;
+  chapters: number | null;
+  duration: number | null;
+  genres: string[];
+  averageScore: number | null;
+  seasonYear: number | null;
+  nextAiringEpisode?: Pick<NextAiringEpisode, "episode" | "airingAt"> | null;
+}
+
+export interface ListItem extends MediaListEntry {
+  media: ListMedia;
+}
