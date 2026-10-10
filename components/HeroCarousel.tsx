@@ -97,7 +97,7 @@ export default function HeroCarousel({ items }: HeroCarouselProps) {
                 <p className={styles.desc}>{description}</p>
               ) : null}
               <Link href={`/media/${media.id}`} className={styles.button}>
-                Dettagli
+                Details
               </Link>
             </div>
           </article>

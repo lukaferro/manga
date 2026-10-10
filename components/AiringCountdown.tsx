@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useNow } from "@/lib/time";
 import styles from "./AiringCountdown.module.css";
 
 interface AiringCountdownProps {
@@ -12,22 +12,11 @@ export default function AiringCountdown({
   airingAt,
   episode,
 }: AiringCountdownProps) {
-  const [timeLeft, setTimeLeft] = useState(() => {
-    return Math.max(0, airingAt - Math.floor(Date.now() / 1000));
-  });
+  // null until mounted, so server and client render the same placeholder
+  const now = useNow(1000);
+  const timeLeft = now == null ? null : Math.max(0, airingAt - now);
 
-  useEffect(() => {
-    const updateCountdown = () => {
-      const remaining = Math.max(0, airingAt - Math.floor(Date.now() / 1000));
-      setTimeLeft(remaining);
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
-  }, [airingAt]);
-
-  if (timeLeft <= 0) {
+  if (timeLeft === 0) {
     return (
       <div className={styles.airingNowBanner}>
         <span className={styles.liveDot} />
@@ -36,10 +25,12 @@ export default function AiringCountdown({
     );
   }
 
-  const days = Math.floor(timeLeft / 86400);
-  const hours = Math.floor((timeLeft % 86400) / 3600);
-  const minutes = Math.floor((timeLeft % 3600) / 60);
-  const seconds = Math.floor(timeLeft % 60);
+  const pad = (n: number) => (timeLeft == null ? "--" : String(n).padStart(2, "0"));
+  const t = timeLeft ?? 0;
+  const days = Math.floor(t / 86400);
+  const hours = Math.floor((t % 86400) / 3600);
+  const minutes = Math.floor((t % 3600) / 60);
+  const seconds = Math.floor(t % 60);
 
   return (
     <div className={styles.countdownCard}>
@@ -54,7 +45,7 @@ export default function AiringCountdown({
       <div className={styles.timerGrid}>
         <div className={styles.unit}>
           <span className={styles.number}>
-            {String(days).padStart(2, "0")}
+            {pad(days)}
           </span>
           <span className={styles.label}>Days</span>
         </div>
@@ -63,7 +54,7 @@ export default function AiringCountdown({
 
         <div className={styles.unit}>
           <span className={styles.number}>
-            {String(hours).padStart(2, "0")}
+            {pad(hours)}
           </span>
           <span className={styles.label}>Hours</span>
         </div>
@@ -72,7 +63,7 @@ export default function AiringCountdown({
 
         <div className={styles.unit}>
           <span className={styles.number}>
-            {String(minutes).padStart(2, "0")}
+            {pad(minutes)}
           </span>
           <span className={styles.label}>Mins</span>
         </div>
@@ -81,7 +72,7 @@ export default function AiringCountdown({
 
         <div className={styles.unit}>
           <span className={styles.number}>
-            {String(seconds).padStart(2, "0")}
+            {pad(seconds)}
           </span>
           <span className={styles.label}>Secs</span>
         </div>
