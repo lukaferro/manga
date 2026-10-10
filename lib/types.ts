@@ -184,3 +184,21 @@ export interface MediaListParams {
   status?: MediaStatus;
   sort?: MediaSort;
 }
+
+export type MediaListStatus =
+  | "CURRENT"
+  | "PLANNING"
+  | "COMPLETED"
+  | "DROPPED"
+  | "PAUSED"
+  | "REPEATING";
+
+export interface MediaListEntry {
+  id: number;
+  mediaId: number;
+  status: MediaListStatus;
+  /** Always on a 0-100 scale */
+  score: number | null;
+  progress: number | null;
+  updatedAt?: number | null;
+}

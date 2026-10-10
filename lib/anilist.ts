@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type {
   GenresResponse,
   MediaDetailResponse,
@@ -242,9 +243,12 @@ export async function fetchMediaList(
   return anilistFetch<MediaListResponse>(MEDIA_LIST_QUERY, variables);
 }
 
-export async function fetchMediaDetail(id: number): Promise<MediaDetailResponse> {
-  return anilistFetch<MediaDetailResponse>(MEDIA_DETAIL_QUERY, { id });
-}
+// Wrapped in React cache(): POST fetches aren't deduplicated automatically,
+// and both generateMetadata and the page request the same media.
+export const fetchMediaDetail = cache(
+  async (id: number): Promise<MediaDetailResponse> =>
+    anilistFetch<MediaDetailResponse>(MEDIA_DETAIL_QUERY, { id }),
+);
 
 export async function fetchGenres(): Promise<GenresResponse> {
   return anilistFetch<GenresResponse>(GENRES_QUERY);

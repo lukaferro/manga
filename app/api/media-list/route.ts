@@ -1,16 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getAniListToken } from "@/lib/auth";
+import { AniListAuthError, anilistAuthFetch, getAniListToken } from "@/lib/auth";
+import type { MediaListEntry } from "@/lib/types";
+
+// Scores are always exchanged on a 0-100 scale, independent of the
+// user's AniList score format setting.
+const ENTRY_FIELDS = `
+  id
+  mediaId
+  status
+  score(format: POINT_100)
+  progress
+  updatedAt
+`;
 
 const MEDIA_LIST_ENTRY_QUERY = `
   query ($mediaId: Int) {
     Media(id: $mediaId) {
       id
       mediaListEntry {
-        id
-        mediaId
-        status
-        score
-        progress
+        ${ENTRY_FIELDS}
       }
     }
   }
@@ -20,20 +28,16 @@ const SAVE_MEDIA_LIST_ENTRY_MUTATION = `
   mutation (
     $mediaId: Int,
     $status: MediaListStatus,
-    $score: Float,
+    $scoreRaw: Int,
     $progress: Int
   ) {
     SaveMediaListEntry (
       mediaId: $mediaId,
       status: $status,
-      score: $score,
+      scoreRaw: $scoreRaw,
       progress: $progress
     ) {
-      id
-      mediaId
-      status
-      score
-      progress
+      ${ENTRY_FIELDS}
     }
   }
 `;
@@ -46,40 +50,42 @@ const DELETE_MEDIA_LIST_ENTRY_MUTATION = `
   }
 `;
 
+function toInt(value: unknown): number | undefined {
+  if (value == null || value === "") return undefined;
+  const n = Math.round(Number(value));
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function errorResponse(err: unknown, fallback: string) {
+  if (err instanceof AniListAuthError) {
+    return NextResponse.json({ error: err.message }, { status: err.status });
+  }
+  console.error(fallback, err);
+  return NextResponse.json({ error: fallback }, { status: 500 });
+}
+
 export async function GET(request: NextRequest) {
   const token = await getAniListToken();
   if (!token) {
     return NextResponse.json({ entry: null, authenticated: false });
   }
 
-  const mediaId = request.nextUrl.searchParams.get("mediaId");
+  const mediaId = toInt(request.nextUrl.searchParams.get("mediaId"));
   if (!mediaId) {
     return NextResponse.json({ error: "Missing mediaId" }, { status: 400 });
   }
 
   try {
-    const res = await fetch("https://graphql.anilist.co", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        query: MEDIA_LIST_ENTRY_QUERY,
-        variables: { mediaId: parseInt(mediaId, 10) },
-      }),
-      cache: "no-store",
-    });
+    const data = await anilistAuthFetch<{
+      Media: { mediaListEntry: MediaListEntry | null } | null;
+    }>(token, MEDIA_LIST_ENTRY_QUERY, { mediaId });
 
-    const json = await res.json();
     return NextResponse.json({
-      entry: json?.data?.Media?.mediaListEntry ?? null,
+      entry: data.Media?.mediaListEntry ?? null,
       authenticated: true,
     });
   } catch (err) {
-    console.error("Error fetching media list entry:", err);
-    return NextResponse.json({ error: "Failed to fetch list entry" }, { status: 500 });
+    return errorResponse(err, "Failed to fetch list entry");
   }
 }
 
@@ -91,39 +97,28 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { mediaId, status, score, progress } = body;
-
-    const res = await fetch("https://graphql.anilist.co", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        query: SAVE_MEDIA_LIST_ENTRY_MUTATION,
-        variables: {
-          mediaId: parseInt(mediaId, 10),
-          status: status || undefined,
-          score: score != null ? parseFloat(score) : undefined,
-          progress: progress != null ? parseInt(progress, 10) : undefined,
-        },
-      }),
-      cache: "no-store",
-    });
-
-    const json = await res.json();
-    if (json.errors) {
-      return NextResponse.json({ error: json.errors[0]?.message }, { status: 400 });
+    const mediaId = toInt(body.mediaId);
+    if (!mediaId) {
+      return NextResponse.json({ error: "Missing mediaId" }, { status: 400 });
     }
 
-    return NextResponse.json({
-      entry: json?.data?.SaveMediaListEntry ?? null,
-      success: true,
-    });
+    const score = toInt(body.score);
+    const progress = toInt(body.progress);
+
+    const data = await anilistAuthFetch<{ SaveMediaListEntry: MediaListEntry }>(
+      token,
+      SAVE_MEDIA_LIST_ENTRY_MUTATION,
+      {
+        mediaId,
+        status: body.status || undefined,
+        scoreRaw: score != null ? Math.min(100, Math.max(0, score)) : undefined,
+        progress: progress != null ? Math.max(0, progress) : undefined,
+      },
+    );
+
+    return NextResponse.json({ entry: data.SaveMediaListEntry, success: true });
   } catch (err) {
-    console.error("Error saving media list entry:", err);
-    return NextResponse.json({ error: "Failed to save entry" }, { status: 500 });
+    return errorResponse(err, "Failed to save entry");
   }
 }
 
@@ -135,29 +130,23 @@ export async function DELETE(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id } = body;
+    const id = toInt(body.id);
+    if (!id) {
+      return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    }
 
-    const res = await fetch("https://graphql.anilist.co", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        query: DELETE_MEDIA_LIST_ENTRY_MUTATION,
-        variables: { id: parseInt(id, 10) },
-      }),
-      cache: "no-store",
-    });
+    const data = await anilistAuthFetch<{ DeleteMediaListEntry: { deleted: boolean } }>(
+      token,
+      DELETE_MEDIA_LIST_ENTRY_MUTATION,
+      { id },
+    );
 
-    const json = await res.json();
-    return NextResponse.json({
-      deleted: json?.data?.DeleteMediaListEntry?.deleted ?? true,
-      success: true,
-    });
+    const deleted = Boolean(data.DeleteMediaListEntry?.deleted);
+    return NextResponse.json(
+      { deleted, success: deleted },
+      { status: deleted ? 200 : 400 },
+    );
   } catch (err) {
-    console.error("Error deleting media list entry:", err);
-    return NextResponse.json({ error: "Failed to delete entry" }, { status: 500 });
+    return errorResponse(err, "Failed to delete entry");
   }
 }

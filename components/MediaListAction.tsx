@@ -5,13 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import styles from "./MediaListAction.module.css";
 
-interface MediaListEntry {
-  id: number;
-  mediaId: number;
-  status: "CURRENT" | "PLANNING" | "COMPLETED" | "DROPPED" | "PAUSED" | "REPEATING";
-  score: number | null;
-  progress: number | null;
-}
+import type { MediaListEntry } from "@/lib/types";
 
 interface MediaListActionProps {
   mediaId: number;
