@@ -576,3 +576,9 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+@media (max-width: 640px) {
+  .backButtonWrap {
+    top: 7.25rem;
+  }
+}

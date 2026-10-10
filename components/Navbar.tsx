@@ -11,8 +11,9 @@ import styles from "./Navbar.module.css";
 const FADE_RANGE = 240;
 
 const NAV_LINKS = [
-  { href: "/", label: "Home", hideOnMobile: true },
+  { href: "/", label: "Home" },
   { href: "/browse", label: "Browse" },
+  { href: "/schedule", label: "Schedule" },
   { href: "/my-list", label: "My List" },
 ];
 
@@ -34,10 +35,10 @@ export default function Navbar() {
   return (
     <header className={`${styles.header} ${solid ? styles.solid : ""}`}>
       <div className={styles.bg} style={{ opacity: progress }} aria-hidden="true" />
-      <nav className={styles.nav}>
-        <Link href="/" className={styles.brand}>
-          Manga&nbsp;&amp;&nbsp;Anime
-        </Link>
+      <Link href="/" className={styles.brand}>
+        Manga&nbsp;&amp;&nbsp;Anime
+      </Link>
+      <nav className={styles.nav} aria-label="Main">
         <div className={styles.links}>
           {NAV_LINKS.map((link) => {
             const active =
@@ -46,9 +47,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`${styles.link} ${active ? styles.linkActive : ""} ${
-                  link.hideOnMobile ? styles.hideOnMobile : ""
-                }`}
+                className={`${styles.link} ${active ? styles.linkActive : ""}`}
                 aria-current={active ? "page" : undefined}
               >
                 {link.label}

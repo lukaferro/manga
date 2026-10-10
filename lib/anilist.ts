@@ -379,3 +379,71 @@ export async function fetchQuickSearch(search: string): Promise<QuickSearchResul
   );
   return { media: data.media.media };
 }
+
+export interface AiringScheduleItem {
+  id: number;
+  episode: number;
+  airingAt: number;
+  media: {
+    id: number;
+    type: MediaType;
+    format: string | null;
+    episodes: number | null;
+    isAdult: boolean | null;
+    popularity: number | null;
+    averageScore: number | null;
+    countryOfOrigin: string | null;
+    title: { romaji: string | null; english: string | null; native: string | null };
+    coverImage: { large: string | null; medium: string | null; color: string | null };
+  };
+}
+
+const AIRING_SCHEDULE_QUERY = `
+  query ($page: Int, $from: Int, $to: Int) {
+    Page(page: $page, perPage: 50) {
+      pageInfo {
+        hasNextPage
+      }
+      airingSchedules(airingAt_greater: $from, airingAt_lesser: $to, sort: [TIME]) {
+        id
+        episode
+        airingAt
+        media {
+          id
+          type
+          format
+          episodes
+          isAdult
+          popularity
+          averageScore
+          countryOfOrigin
+          title {
+            romaji
+            english
+            native
+          }
+          coverImage {
+            large
+            medium
+            color
+          }
+        }
+      }
+    }
+  }
+`;
+
+const MAX_SCHEDULE_PAGES = 6;
+
+/** All episodes airing between two Unix timestamps (seconds). */
+export async function fetchAiringSchedule(from: number, to: number): Promise<AiringScheduleItem[]> {
+  const items: AiringScheduleItem[] = [];
+  for (let page = 1; page <= MAX_SCHEDULE_PAGES; page++) {
+    const data = await anilistFetch<{
+      Page: { pageInfo: { hasNextPage: boolean }; airingSchedules: AiringScheduleItem[] };
+    }>(AIRING_SCHEDULE_QUERY, { page, from, to }, { revalidate: 1800 });
+    items.push(...data.Page.airingSchedules);
+    if (!data.Page.pageInfo.hasNextPage) break;
+  }
+  return items.filter((item) => item.media && !item.media.isAdult);
+}

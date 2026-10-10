@@ -30,19 +30,26 @@
 
 .nav {
   position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  margin-left: 1.5rem;
 }
 
 .controls {
   position: relative;
+  flex-shrink: 0;
+  margin-left: 0.75rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
+
 .brand {
+  position: relative;
+  flex-shrink: 0;
   font-family: var(--font-display);
   font-size: 1.5rem;
   letter-spacing: 0.02em;
@@ -97,8 +104,15 @@
     font-size: 1.25rem;
   }
 
+  .header {
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+  }
+
   .nav {
-    gap: 1rem;
+    order: 3;
+    flex-basis: 100%;
+    margin-left: 0;
   }
 }
 
@@ -135,9 +149,5 @@
 
   .link {
     font-size: 0.85rem;
-  }
-
-  .hideOnMobile {
-    display: none;
   }
 }
