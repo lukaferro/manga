@@ -60,6 +60,7 @@
 
 /* Type switch (Anime / Manga) */
 .typeSwitch {
+  align-self: flex-start;
   display: inline-flex;
   padding: 0.25rem;
   margin-bottom: 1rem;
@@ -418,4 +419,37 @@
   50% {
     opacity: 0.45;
   }
+}
+
+/* Info banners (guest mode, import) */
+.infoBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid color-mix(in srgb, #02a9ff 35%, transparent);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, #02a9ff 9%, var(--surface));
+  font-size: 0.9rem;
+}
+
+.bannerText {
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.bannerActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.primaryBtn:disabled,
+.secondaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }

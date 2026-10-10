@@ -27,12 +27,8 @@ export default function MediaListAction({ media }: MediaListActionProps) {
   const unit = progressUnit(media.type);
   const title = listItemTitle(media);
 
-  if (sessionStatus === "loading" || loading) {
+  if (sessionStatus === "loading" || loading || store === null) {
     return <div className={styles.loadingSkeleton} />;
-  }
-
-  if (store === null) {
-    return <LoginPrompt pathname={pathname || `/media/${media.id}`} />;
   }
 
   const handleQuickProgress = () => {
@@ -95,6 +91,16 @@ export default function MediaListAction({ media }: MediaListActionProps) {
         </p>
       )}
 
+      {store.kind === "local" && (
+        <p className={styles.loginHelperText}>
+          Saved on this device ·{" "}
+          <a href={loginHref(pathname || `/media/${media.id}`)} className={styles.helperLink}>
+            Log in with AniList
+          </a>{" "}
+          to sync
+        </p>
+      )}
+
       <ListEntryModal
         open={isOpen}
         onClose={() => setIsOpen(false)}
@@ -112,28 +118,3 @@ export default function MediaListAction({ media }: MediaListActionProps) {
   );
 }
 
-function LoginPrompt({ pathname }: { pathname: string }) {
-  return (
-    <div className={styles.loginCardWrap}>
-      <a href={loginHref(pathname)} className={styles.loginPromptBtn}>
-        <svg
-          viewBox="0 0 24 24"
-          width="17"
-          height="17"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-        <span>Add to AniList</span>
-      </a>
-      <p className={styles.loginHelperText}>
-        Login with AniList to track your progress & score.
-      </p>
-    </div>
-  );
-}

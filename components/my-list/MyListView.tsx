@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import CustomSelect from "@/components/CustomSelect";
 import ListEntryModal from "@/components/ListEntryModal";
+import GuestImportBanner from "@/components/my-list/GuestImportBanner";
 import ListCard from "@/components/my-list/ListCard";
 import { loginHref, useSession } from "@/components/SessionProvider";
 import { STATUS_CONFIG, statusLabel } from "@/lib/list-status";
@@ -46,6 +47,7 @@ export default function MyListView() {
     useListCollection(type);
 
   const counts = useMemo(() => countByTab(items), [items]);
+  const listIds = useMemo(() => new Set(items.map((i) => i.mediaId)), [items]);
   const visible = useMemo(
     () => sortItems(filterItems(items, tab, query), sort),
     [items, tab, query, sort],
@@ -58,25 +60,8 @@ export default function MyListView() {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
-  if (sessionStatus === "loading") {
+  if (sessionStatus === "loading" || !store) {
     return <ListSkeleton />;
-  }
-
-  if (!store) {
-    return (
-      <div className={styles.emptyState}>
-        <p className={styles.emptyIcon} aria-hidden="true">
-          📚
-        </p>
-        <h2 className={styles.emptyTitle}>Keep track of everything you watch and read</h2>
-        <p className={styles.emptyText}>
-          Log in with AniList to see your list, update progress and get your stats.
-        </p>
-        <a href={loginHref(pathname)} className={styles.primaryBtn}>
-          Login with AniList
-        </a>
-      </div>
-    );
   }
 
   return (
@@ -94,6 +79,23 @@ export default function MyListView() {
           View Stats
         </Link>
       </div>
+
+      {store.kind === "local" ? (
+        <div className={styles.infoBanner}>
+          <div>
+            <strong>Guest mode</strong>
+            <p className={styles.bannerText}>
+              Your list is saved in this browser only. Log in with AniList to sync it
+              across devices — you can import what you saved here.
+            </p>
+          </div>
+          <a href={loginHref(pathname)} className={styles.primaryBtn}>
+            Login with AniList
+          </a>
+        </div>
+      ) : (
+        !loading && <GuestImportBanner existingIds={listIds} />
+      )}
 
       <div className={styles.typeSwitch} role="tablist" aria-label="Media type">
         {(["ANIME", "MANGA"] as MediaType[]).map((t) => (

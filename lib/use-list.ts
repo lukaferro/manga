@@ -9,13 +9,32 @@ import {
   type ListStore,
   type SaveEntryInput,
 } from "./list-store";
+import { LOCAL_LIST_KEY, localListStore } from "./local-list-store";
 import type { ListItem, ListMedia, MediaListEntry, MediaType } from "./types";
 
-/** The active store, or null while the session is still loading or for guests. */
+/**
+ * The active store: AniList when logged in, the device-local guest list
+ * otherwise, or null while the session is still loading.
+ */
 export function useListStore(): ListStore | null {
   const { status } = useSession();
   if (status === "authenticated") return anilistStore;
+  if (status === "guest") return localListStore;
   return null;
+}
+
+/** Re-read the guest list when another tab changes it. */
+function useCrossTabReload(store: ListStore | null): number {
+  const [token, setToken] = useState(0);
+  useEffect(() => {
+    if (store?.kind !== "local") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === LOCAL_LIST_KEY || e.key === null) setToken((t) => t + 1);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [store]);
+  return token;
 }
 
 export type EntryPatch = Omit<SaveEntryInput, "mediaId" | "media">;
@@ -39,6 +58,7 @@ export function useListEntry(mediaId: number, media?: ListMedia) {
   const key = store ? `${store.kind}:${mediaId}` : "";
   const [state, setState] = useState<Loaded<MediaListEntry | null> | null>(null);
   const [saving, setSaving] = useState(false);
+  const crossTabToken = useCrossTabReload(store);
 
   useEffect(() => {
     if (!store) return;
@@ -50,7 +70,7 @@ export function useListEntry(mediaId: number, media?: ListMedia) {
     return () => {
       cancelled = true;
     };
-  }, [store, mediaId, key]);
+  }, [store, mediaId, key, crossTabToken]);
 
   useEffect(
     () =>
@@ -133,6 +153,7 @@ export function useListCollection(type: MediaType) {
   const [reloadToken, setReloadToken] = useState(0);
   const [pending, setPending] = useState<Set<number>>(() => new Set());
   const [actionError, setActionError] = useState<string | null>(null);
+  const crossTabToken = useCrossTabReload(store);
 
   useEffect(() => {
     if (!store) return;
@@ -144,7 +165,7 @@ export function useListCollection(type: MediaType) {
     return () => {
       cancelled = true;
     };
-  }, [store, type, key, reloadToken]);
+  }, [store, type, key, reloadToken, crossTabToken]);
 
   useEffect(
     () =>
