@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import ThemeScript from "@/components/ThemeScript";
 import { SessionProvider } from "@/components/SessionProvider";
+import { getAppUrl } from "@/lib/auth";
 
 const zenMaruGothic = Zen_Maru_Gothic({
   variable: "--font-sans",
@@ -18,6 +19,7 @@ const yujiMai = Yuji_Mai({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getAppUrl()),
   title: "Manga & Anime",
   description: "Browse manga and anime powered by AniList",
 };

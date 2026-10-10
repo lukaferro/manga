@@ -6,7 +6,13 @@ import TrailerModal from "@/components/TrailerModal";
 import BackButton from "@/components/BackButton";
 import AiringCountdown from "@/components/AiringCountdown";
 import MediaListAction from "@/components/MediaListAction";
-import { AniListError, fetchMediaDetail, localizeAniListLinks } from "@/lib/anilist";
+import { notFound } from "next/navigation";
+import {
+  AniListError,
+  fetchMediaDetail,
+  fetchMediaList,
+  localizeAniListLinks,
+} from "@/lib/anilist";
 import { toListMedia } from "@/lib/list-store";
 import type { FuzzyDate, Media } from "@/lib/types";
 import styles from "./detail.module.css";
@@ -15,13 +21,46 @@ interface DetailPageProps {
   params: Promise<{ id: string }>;
 }
 
+// Pages are cached and regenerated in the background at most once an hour
+export const revalidate = 3600;
+
+const PRERENDERED_PER_TYPE = 12;
+
+/** Prerender the most popular anime and manga at build time; others render on demand. */
+export async function generateStaticParams() {
+  try {
+    const [anime, manga] = await Promise.all([
+      fetchMediaList({ type: "ANIME", sort: "POPULARITY_DESC", perPage: PRERENDERED_PER_TYPE }),
+      fetchMediaList({ type: "MANGA", sort: "POPULARITY_DESC", perPage: PRERENDERED_PER_TYPE }),
+    ]);
+    return [...anime.Page.media, ...manga.Page.media].map((m) => ({ id: String(m.id) }));
+  } catch {
+    // AniList unavailable during build: fall back to rendering everything on demand
+    return [];
+  }
+}
+
+/**
+ * Null for unknown ids (rendered as 404). Other failures are thrown so the
+ * error boundary shows them and no error page gets cached.
+ */
+async function loadMedia(rawId: string): Promise<Media | null> {
+  const id = Number.parseInt(rawId, 10);
+  if (!Number.isFinite(id) || id <= 0) return null;
+  try {
+    return (await fetchMediaDetail(id)).Media;
+  } catch (err) {
+    if (err instanceof AniListError && err.status === 404) return null;
+    throw err;
+  }
+}
+
 export async function generateMetadata({
   params,
 }: DetailPageProps): Promise<Metadata> {
   const { id } = await params;
   try {
-    const res = await fetchMediaDetail(parseInt(id, 10));
-    const media = res.Media;
+    const media = await loadMedia(id);
     if (!media) return { title: "Media Not Found" };
     const title = media.title.romaji || media.title.english || "Media Detail";
     const plainDesc = media.description
@@ -30,10 +69,10 @@ export async function generateMetadata({
     return {
       title: `${title} | Manga & Anime`,
       description: plainDesc,
+      // The share image comes from opengraph-image.tsx in this segment
       openGraph: {
         title,
         description: plainDesc,
-        images: media.coverImage.extraLarge ? [media.coverImage.extraLarge] : [],
       },
     };
   } catch {
@@ -56,32 +95,8 @@ function formatRelationLabel(type: string | null): string {
 export default async function MediaDetailPage({ params }: DetailPageProps) {
   const { id } = await params;
 
-  let media: Media | null = null;
-  let notFound = false;
-  let errorMessage: string | null = null;
-
-  try {
-    const res = await fetchMediaDetail(parseInt(id, 10));
-    media = res.Media;
-  } catch (err) {
-    if (err instanceof AniListError && err.status === 404) {
-      notFound = true;
-    } else {
-      errorMessage =
-        err instanceof AniListError ? err.message : "Error loading content.";
-    }
-  }
-
-  if (notFound || !media) {
-    return (
-      <main className={styles.notFound}>
-        <p>{errorMessage ?? "Media not found."}</p>
-        <Link href="/browse" className={styles.backButton}>
-          ← Back to Browse
-        </Link>
-      </main>
-    );
-  }
+  const media = await loadMedia(id);
+  if (!media) notFound();
 
   const mainTitle =
     media.title.romaji ?? media.title.english ?? media.title.native ?? "Untitled";
