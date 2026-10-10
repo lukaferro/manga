@@ -6,7 +6,7 @@ import TrailerModal from "@/components/TrailerModal";
 import BackButton from "@/components/BackButton";
 import AiringCountdown from "@/components/AiringCountdown";
 import MediaListAction from "@/components/MediaListAction";
-import { AniListError, fetchMediaDetail } from "@/lib/anilist";
+import { AniListError, fetchMediaDetail, localizeAniListLinks } from "@/lib/anilist";
 import { toListMedia } from "@/lib/list-store";
 import type { FuzzyDate, Media } from "@/lib/types";
 import styles from "./detail.module.css";
@@ -326,7 +326,7 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
                 <h2 className={styles.sectionTitle}>Synopsis</h2>
                 <div
                   className={styles.description}
-                  dangerouslySetInnerHTML={{ __html: media.description }}
+                  dangerouslySetInnerHTML={{ __html: localizeAniListLinks(media.description) }}
                 />
               </section>
             )}
@@ -344,7 +344,7 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
                     return (
                       <div key={char.id} className={styles.charCard}>
                         {/* Character info */}
-                        <div className={styles.charSide}>
+                        <Link href={`/character/${char.id}`} className={styles.charSide}>
                           {char.image?.large ? (
                             <Image
                               src={char.image.large}
@@ -362,11 +362,11 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
                               {edge.role?.toLowerCase() ?? "Character"}
                             </p>
                           </div>
-                        </div>
+                        </Link>
 
                         {/* Japanese Voice Actor info if available */}
                         {va ? (
-                          <div className={styles.vaSide}>
+                          <Link href={`/staff/${va.id}`} className={styles.vaSide}>
                             <div className={styles.vaTexts}>
                               <p className={styles.vaName}>
                                 {va.name?.full ?? "Voice Actor"}
@@ -384,7 +384,7 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
                                 className={styles.charThumb}
                               />
                             ) : null}
-                          </div>
+                          </Link>
                         ) : null}
                       </div>
                     );

@@ -1,5 +1,6 @@
 import { cache } from "react";
 import type {
+  Character,
   GenresResponse,
   MediaDetailResponse,
   MediaListParams,
@@ -7,6 +8,7 @@ import type {
   MediaSeason,
   MediaSort,
   MediaType,
+  Staff,
 } from "./types";
 
 const ANILIST_URL = "https://graphql.anilist.co";
@@ -343,8 +345,17 @@ export interface QuickSearchMedia {
   averageScore: number | null;
 }
 
+export interface QuickSearchPerson {
+  id: number;
+  name: { full: string | null; native: string | null };
+  image: { medium: string | null } | null;
+  primaryOccupations?: string[] | null;
+}
+
 export interface QuickSearchResults {
   media: QuickSearchMedia[];
+  characters: QuickSearchPerson[];
+  staff: QuickSearchPerson[];
 }
 
 const QUICK_SEARCH_QUERY = `
@@ -369,15 +380,45 @@ const QUICK_SEARCH_QUERY = `
         averageScore
       }
     }
+    characters: Page(perPage: 3) {
+      characters(search: $search, sort: [SEARCH_MATCH, FAVOURITES_DESC]) {
+        id
+        name {
+          full
+          native
+        }
+        image {
+          medium
+        }
+      }
+    }
+    staff: Page(perPage: 3) {
+      staff(search: $search, sort: [SEARCH_MATCH, FAVOURITES_DESC]) {
+        id
+        name {
+          full
+          native
+        }
+        image {
+          medium
+        }
+        primaryOccupations
+      }
+    }
   }
 `;
 
 export async function fetchQuickSearch(search: string): Promise<QuickSearchResults> {
-  const data = await anilistFetch<{ media: { media: QuickSearchMedia[] } }>(
-    QUICK_SEARCH_QUERY,
-    { search },
-  );
-  return { media: data.media.media };
+  const data = await anilistFetch<{
+    media: { media: QuickSearchMedia[] };
+    characters: { characters: QuickSearchPerson[] };
+    staff: { staff: QuickSearchPerson[] };
+  }>(QUICK_SEARCH_QUERY, { search });
+  return {
+    media: data.media.media,
+    characters: data.characters.characters,
+    staff: data.staff.staff,
+  };
 }
 
 export interface AiringScheduleItem {
@@ -446,4 +487,151 @@ export async function fetchAiringSchedule(from: number, to: number): Promise<Air
     if (!data.Page.pageInfo.hasNextPage) break;
   }
   return items.filter((item) => item.media && !item.media.isAdult);
+}
+
+const MEDIA_THUMB_FIELDS = `
+  id
+  type
+  format
+  title {
+    romaji
+    english
+    native
+  }
+  coverImage {
+    large
+    color
+  }
+  averageScore
+  startDate {
+    year
+  }
+`;
+
+const CHARACTER_QUERY = `
+  query ($id: Int) {
+    Character(id: $id) {
+      id
+      name {
+        full
+        native
+        alternative
+      }
+      image {
+        large
+      }
+      description(asHtml: true)
+      gender
+      age
+      bloodType
+      dateOfBirth {
+        year
+        month
+        day
+      }
+      favourites
+      siteUrl
+      media(sort: [POPULARITY_DESC], perPage: 24) {
+        edges {
+          characterRole
+          node {
+            ${MEDIA_THUMB_FIELDS}
+          }
+          voiceActors(language: JAPANESE, sort: [RELEVANCE]) {
+            id
+            name {
+              full
+            }
+            image {
+              medium
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+const STAFF_QUERY = `
+  query ($id: Int) {
+    Staff(id: $id) {
+      id
+      name {
+        full
+        native
+        alternative
+      }
+      image {
+        large
+      }
+      description(asHtml: true)
+      primaryOccupations
+      gender
+      age
+      dateOfBirth {
+        year
+        month
+        day
+      }
+      dateOfDeath {
+        year
+        month
+        day
+      }
+      yearsActive
+      homeTown
+      favourites
+      siteUrl
+      language: languageV2
+      characterMedia(sort: [POPULARITY_DESC], perPage: 24) {
+        edges {
+          characterRole
+          node {
+            ${MEDIA_THUMB_FIELDS}
+          }
+          characters {
+            id
+            name {
+              full
+            }
+            image {
+              medium
+            }
+          }
+        }
+      }
+      staffMedia(sort: [POPULARITY_DESC], perPage: 18) {
+        edges {
+          staffRole
+          node {
+            ${MEDIA_THUMB_FIELDS}
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const fetchCharacter = cache(
+  async (id: number): Promise<Character | null> =>
+    (await anilistFetch<{ Character: Character | null }>(CHARACTER_QUERY, { id })).Character,
+);
+
+export const fetchStaff = cache(
+  async (id: number): Promise<Staff | null> =>
+    (await anilistFetch<{ Staff: Staff | null }>(STAFF_QUERY, { id })).Staff,
+);
+
+/**
+ * Point AniList links inside description HTML to this app's own pages,
+ * e.g. https://anilist.co/character/123/Fern → /character/123.
+ */
+export function localizeAniListLinks(html: string): string {
+  return html.replace(
+    /href=(["'])https?:\/\/anilist\.co\/(anime|manga|character|staff)\/(\d+)[^"']*\1/g,
+    (_match, quote: string, kind: string, id: string) => {
+      const path = kind === "anime" || kind === "manga" ? "media" : kind;
+      return `href=${quote}/${path}/${id}${quote}`;
+    },
+  );
 }

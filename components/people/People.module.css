@@ -1,0 +1,108 @@
+.page {
+  padding-top: 5.5rem;
+}
+
+.back {
+  margin-bottom: 1.25rem;
+}
+
+.layout {
+  margin-top: 0;
+}
+
+.anilistLink {
+  display: block;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  color: #02a9ff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.anilistLink:hover {
+  border-color: #02a9ff;
+}
+
+/* AniList renders spoilers as <span class="markdown_spoiler"><span>…</span></span> */
+.description :global(.markdown_spoiler) {
+  padding: 0 0.2rem;
+  border-radius: 0.25rem;
+  background: var(--border);
+  cursor: help;
+}
+
+.description :global(.markdown_spoiler) > span {
+  filter: blur(5px);
+  transition: filter 0.2s ease;
+}
+
+.description :global(.markdown_spoiler):hover > span,
+.description :global(.markdown_spoiler):active > span {
+  filter: none;
+}
+
+/* Media grid with role labels */
+.mediaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1.25rem 1rem;
+}
+
+.mediaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.role {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.person:hover .personName {
+  color: var(--accent);
+}
+
+.personThumb {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--border);
+}
+
+.personName {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  transition: color 0.15s ease;
+}
+
+.section {
+  margin-top: 2.5rem;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding-top: 7.5rem;
+  }
+
+  .mediaGrid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+}

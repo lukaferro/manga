@@ -4,7 +4,7 @@ import { AniListError, fetchQuickSearch } from "@/lib/anilist";
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q")?.trim() ?? "";
   if (q.length < 2) {
-    return NextResponse.json({ media: [] });
+    return NextResponse.json({ media: [], characters: [], staff: [] });
   }
 
   try {

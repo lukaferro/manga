@@ -582,3 +582,8 @@
     top: 7.25rem;
   }
 }
+
+a.charSide:hover .charName,
+a.vaSide:hover .vaName {
+  color: var(--accent);
+}

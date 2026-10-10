@@ -1,0 +1,18 @@
+.collapsed {
+  max-height: 16rem;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 60%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent);
+}
+
+.toggle {
+  margin-top: 0.5rem;
+  color: var(--accent);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.toggle:hover {
+  text-decoration: underline;
+}

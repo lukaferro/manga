@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal";
-import type { QuickSearchMedia } from "@/lib/anilist";
+import type { QuickSearchMedia, QuickSearchPerson, QuickSearchResults } from "@/lib/anilist";
 import styles from "./QuickSearch.module.css";
 
 const RECENT_KEY = "quicksearch:recent";
@@ -36,6 +36,19 @@ function mediaToItem(m: QuickSearchMedia): ResultItem {
     subtitle: parts.join(" · "),
     image: m.coverImage.medium,
     color: m.coverImage.color,
+  };
+}
+
+function personToItem(p: QuickSearchPerson, kind: "character" | "staff"): ResultItem {
+  const role =
+    kind === "character" ? "Character" : (p.primaryOccupations?.slice(0, 2).join(", ") || "Staff");
+  return {
+    key: `${kind}-${p.id}`,
+    href: `/${kind}/${p.id}`,
+    title: p.name.full || p.name.native || "Unknown",
+    subtitle: [role, p.name.native].filter(Boolean).join(" · "),
+    image: p.image?.medium ?? null,
+    color: null,
   };
 }
 
@@ -140,8 +153,15 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
           signal: controller.signal,
         });
         if (!res.ok) throw new Error();
-        const data: { media: QuickSearchMedia[] } = await res.json();
-        setResults({ query: trimmed, items: data.media.map(mediaToItem) });
+        const data: QuickSearchResults = await res.json();
+        setResults({
+          query: trimmed,
+          items: [
+            ...data.media.map(mediaToItem),
+            ...(data.characters ?? []).map((c) => personToItem(c, "character")),
+            ...(data.staff ?? []).map((p) => personToItem(p, "staff")),
+          ],
+        });
         setError(false);
         setActive(0);
       } catch (err) {
@@ -206,7 +226,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
           aria-activedescendant={items[active] ? optionId(active) : undefined}
           aria-autocomplete="list"
           aria-label="Search anime and manga"
-          placeholder="Search anime and manga…"
+          placeholder="Search anime, manga, characters, staff…"
           className={styles.input}
           value={query}
           onChange={(e) => {

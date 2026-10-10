@@ -113,7 +113,7 @@ export interface MediaCardData {
   id: number;
   title: Title;
   type: MediaType;
-  coverImage: CoverImage;
+  coverImage: Partial<CoverImage>;
   averageScore: number | null;
 }
 
@@ -222,4 +222,76 @@ export interface ListMedia {
 
 export interface ListItem extends MediaListEntry {
   media: ListMedia;
+}
+
+export interface PersonName {
+  full: string | null;
+  native: string | null;
+  alternative?: string[] | null;
+}
+
+export interface MediaThumb {
+  id: number;
+  type: MediaType;
+  format: MediaFormat | null;
+  title: Title;
+  coverImage: Pick<CoverImage, "large" | "color">;
+  averageScore: number | null;
+  startDate: { year: number | null };
+}
+
+export interface PersonRef {
+  id: number;
+  name: { full: string | null };
+  image: { medium: string | null } | null;
+}
+
+export interface Character {
+  id: number;
+  name: PersonName;
+  image: { large: string | null } | null;
+  description: string | null;
+  gender: string | null;
+  age: string | null;
+  bloodType: string | null;
+  dateOfBirth: FuzzyDate;
+  favourites: number | null;
+  siteUrl: string | null;
+  media: {
+    edges: {
+      characterRole: string | null;
+      node: MediaThumb | null;
+      voiceActors: PersonRef[] | null;
+    }[];
+  } | null;
+}
+
+export interface Staff {
+  id: number;
+  name: PersonName;
+  image: { large: string | null } | null;
+  description: string | null;
+  primaryOccupations: string[] | null;
+  gender: string | null;
+  age: number | null;
+  dateOfBirth: FuzzyDate;
+  dateOfDeath: FuzzyDate;
+  yearsActive: number[] | null;
+  homeTown: string | null;
+  favourites: number | null;
+  siteUrl: string | null;
+  language: string | null;
+  characterMedia: {
+    edges: {
+      characterRole: string | null;
+      node: MediaThumb | null;
+      characters: PersonRef[] | null;
+    }[];
+  } | null;
+  staffMedia: {
+    edges: {
+      staffRole: string | null;
+      node: MediaThumb | null;
+    }[];
+  } | null;
 }
