@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import QuickSearch from "@/components/QuickSearch";
 import ThemeToggle from "@/components/ThemeToggle";
 import UserMenu from "@/components/UserMenu";
 import styles from "./Navbar.module.css";
@@ -57,6 +58,7 @@ export default function Navbar() {
         </div>
       </nav>
       <div className={styles.controls}>
+        <QuickSearch />
         <ThemeToggle labels={{ light: "Light", dark: "Dark" }} />
         <UserMenu />
       </div>

@@ -10,6 +10,7 @@ import type {
 } from "./types";
 
 const ANILIST_URL = "https://graphql.anilist.co";
+const MAX_RATE_LIMIT_RETRIES = 2;
 
 export class AniListError extends Error {
   status: number;
@@ -24,22 +25,33 @@ export class AniListError extends Error {
 export async function anilistFetch<T>(
   query: string,
   variables: Record<string, unknown> = {},
+  { revalidate = 3600 }: { revalidate?: number } = {},
 ): Promise<T> {
-  const res = await fetch(ANILIST_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({ query, variables }),
-    next: { revalidate: 3600 },
-  });
+  const request = () =>
+    fetch(ANILIST_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ query, variables }),
+      next: { revalidate },
+    });
 
-  const json = await res.json();
+  let res = await request();
 
-  if (!res.ok) {
+  // AniList rate limits aggressively; honour Retry-After a couple of times
+  for (let attempt = 0; res.status === 429 && attempt < MAX_RATE_LIMIT_RETRIES; attempt++) {
+    const retryAfter = Number(res.headers.get("Retry-After")) || 2;
+    await new Promise((resolve) => setTimeout(resolve, Math.min(retryAfter, 10) * 1000));
+    res = await request();
+  }
+
+  const json = await res.json().catch(() => null);
+
+  if (!res.ok || !json?.data) {
     const message = json?.errors?.[0]?.message ?? `AniList error ${res.status}`;
-    throw new AniListError(message, res.status);
+    throw new AniListError(message, res.ok ? 500 : res.status);
   }
 
   return json.data as T;
@@ -319,4 +331,51 @@ export function getCurrentSeason(): MediaSeason {
   if (month >= 4 && month <= 6) return "SPRING";
   if (month >= 7 && month <= 9) return "SUMMER";
   return "FALL";
+}
+
+export interface QuickSearchMedia {
+  id: number;
+  type: MediaType;
+  format: string | null;
+  title: { romaji: string | null; english: string | null; native: string | null };
+  coverImage: { medium: string | null; color: string | null };
+  startDate: { year: number | null };
+  averageScore: number | null;
+}
+
+export interface QuickSearchResults {
+  media: QuickSearchMedia[];
+}
+
+const QUICK_SEARCH_QUERY = `
+  query ($search: String) {
+    media: Page(perPage: 8) {
+      media(search: $search, isAdult: false, sort: [SEARCH_MATCH, POPULARITY_DESC]) {
+        id
+        type
+        format
+        title {
+          romaji
+          english
+          native
+        }
+        coverImage {
+          medium
+          color
+        }
+        startDate {
+          year
+        }
+        averageScore
+      }
+    }
+  }
+`;
+
+export async function fetchQuickSearch(search: string): Promise<QuickSearchResults> {
+  const data = await anilistFetch<{ media: { media: QuickSearchMedia[] } }>(
+    QUICK_SEARCH_QUERY,
+    { search },
+  );
+  return { media: data.media.media };
 }
