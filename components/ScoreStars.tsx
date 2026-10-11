@@ -138,11 +138,15 @@ export default function ScoreStars({ value, onChange, labelledBy }: ScoreStarsPr
           )}
         </span>
         {shown > 0 && <span className={styles.verdict}>{scoreVerdict(shown)}</span>}
-        {value > 0 && hover == null && (
-          <button type="button" className={styles.clear} onClick={() => set(0)}>
-            Clear
-          </button>
-        )}
+        {/* Always rendered so the row keeps its layout; hidden when there is nothing to clear */}
+        <button
+          type="button"
+          className={`${styles.clear} ${value > 0 && hover == null ? "" : styles.hidden}`}
+          onClick={() => set(0)}
+          tabIndex={value > 0 ? 0 : -1}
+        >
+          Clear
+        </button>
       </div>
     </div>
   );

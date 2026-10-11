@@ -46,16 +46,29 @@
   filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.35));
 }
 
+/* Fixed geometry so changing the score never resizes or shifts the dialog */
 .readout {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
-  min-height: 1.6rem;
+  height: 28px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.value {
+  display: inline-flex;
+  align-items: baseline;
+  width: 4.6rem;
+  flex-shrink: 0;
 }
 
 .value strong {
+  display: inline-block;
+  width: 2.2rem;
   color: #f8fafc;
   font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .outOf {
@@ -78,6 +91,8 @@
 
 .clear {
   margin-left: auto;
+  flex-shrink: 0;
+  line-height: 1.4;
   padding: 2px 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
@@ -90,4 +105,8 @@
 .clear:hover {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.3);
+}
+
+.hidden {
+  visibility: hidden;
 }
