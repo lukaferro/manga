@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import Image from "next/image";
 import Modal from "@/components/Modal";
+import ScoreStars from "@/components/ScoreStars";
 import {
   EDITABLE_STATUSES,
   STATUS_CONFIG,
@@ -27,8 +28,6 @@ interface ListEntryModalProps {
   onSave: (patch: EntryPatch) => void;
   onDelete?: () => void;
 }
-
-const SCORE_CHIPS = [0, 60, 70, 80, 90, 100];
 
 export default function ListEntryModal(props: ListEntryModalProps) {
   const titleId = useId();
@@ -218,47 +217,10 @@ function EntryForm({
         </div>
 
         <div className={styles.section}>
-          <div className={styles.sectionHeaderBetween}>
-            <label htmlFor={`${titleId}-score`} className={styles.sectionLabel}>
-              Score (0 - 100)
-            </label>
-            <span className={styles.scoreStarsPreview}>
-              {score > 0 ? (
-                <>
-                  <span className={styles.starGlyph}>★</span>
-                  <strong>{(score / 10).toFixed(1)}</strong>
-                  <span className={styles.scoreTen}>/ 10</span>
-                </>
-              ) : (
-                <span className={styles.noScoreText}>Not Rated</span>
-              )}
-            </span>
-          </div>
-
-          <div className={styles.scoreSliderWrap}>
-            <input
-              id={`${titleId}-score`}
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value={score}
-              onChange={(e) => setScore(Number(e.target.value))}
-              className={styles.rangeSlider}
-            />
-            <div className={styles.scoreQuickChips}>
-              {SCORE_CHIPS.map((val) => (
-                <button
-                  key={val}
-                  type="button"
-                  className={`${styles.scoreChip} ${score === val ? styles.scoreChipActive : ""}`}
-                  onClick={() => setScore(val)}
-                >
-                  {val === 0 ? "None" : `${val / 10}★`}
-                </button>
-              ))}
-            </div>
-          </div>
+          <span id={`${titleId}-score`} className={styles.sectionLabel}>
+            Your score
+          </span>
+          <ScoreStars value={score} onChange={setScore} labelledBy={`${titleId}-score`} />
         </div>
 
         <div className={styles.modalFooter}>

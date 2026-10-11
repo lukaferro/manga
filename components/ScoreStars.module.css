@@ -1,0 +1,93 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stars {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 4px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.stars:focus-visible {
+  outline: 2px solid #fbbf24;
+  outline-offset: 4px;
+}
+
+.star {
+  position: relative;
+  display: block;
+  width: clamp(24px, 8.4%, 34px);
+  aspect-ratio: 1;
+}
+
+.star svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.starEmpty {
+  fill: rgba(255, 255, 255, 0.14);
+}
+
+.starFill {
+  position: absolute;
+  inset: 0;
+}
+
+.starFill svg {
+  fill: #fbbf24;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.35));
+}
+
+.readout {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-height: 1.6rem;
+}
+
+.value strong {
+  color: #f8fafc;
+  font-size: 1.2rem;
+}
+
+.outOf {
+  margin-left: 3px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+}
+
+.unrated {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.verdict {
+  color: #fbbf24;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.clear {
+  margin-left: auto;
+  padding: 2px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clear:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
