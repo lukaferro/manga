@@ -5,7 +5,7 @@ Browse, track and discover anime and manga, powered by the [AniList](https://ani
 ## Features
 
 - **Home & Browse**: trending, seasonal and top-rated rows; filters for genre, type, season, year, format and status, with infinite scroll.
-- **Title pages**: synopsis, trailer, cast with voice actors, relations, recommendations and a live airing countdown. The most popular titles are prerendered, and every title gets a generated share image.
+- **Title pages**: synopsis, trailer, cast with voice actors, relations, recommendations and a live airing countdown. Pages are rendered on first visit and cached for an hour (ISR), and every title gets a generated share image.
 - **Character & staff pages**: biographies (spoilers blurred), appearances and roles.
 - **Quick search**: press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> or <kbd>/</kbd> to search anime, manga, characters and staff.
 - **Airing schedule**: episodes airing this week, shown in your local timezone.

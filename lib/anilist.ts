@@ -12,7 +12,7 @@ import type {
 } from "./types";
 
 const ANILIST_URL = "https://graphql.anilist.co";
-const MAX_RATE_LIMIT_RETRIES = 2;
+const MAX_RATE_LIMIT_RETRIES = 4;
 
 export class AniListError extends Error {
   status: number;

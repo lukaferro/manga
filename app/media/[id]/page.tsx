@@ -10,7 +10,6 @@ import { notFound } from "next/navigation";
 import {
   AniListError,
   fetchMediaDetail,
-  fetchMediaList,
   localizeAniListLinks,
 } from "@/lib/anilist";
 import { toListMedia } from "@/lib/list-store";
@@ -24,20 +23,13 @@ interface DetailPageProps {
 // Pages are cached and regenerated in the background at most once an hour
 export const revalidate = 3600;
 
-const PRERENDERED_PER_TYPE = 12;
-
-/** Prerender the most popular anime and manga at build time; others render on demand. */
-export async function generateStaticParams() {
-  try {
-    const [anime, manga] = await Promise.all([
-      fetchMediaList({ type: "ANIME", sort: "POPULARITY_DESC", perPage: PRERENDERED_PER_TYPE }),
-      fetchMediaList({ type: "MANGA", sort: "POPULARITY_DESC", perPage: PRERENDERED_PER_TYPE }),
-    ]);
-    return [...anime.Page.media, ...manga.Page.media].map((m) => ({ id: String(m.id) }));
-  } catch {
-    // AniList unavailable during build: fall back to rendering everything on demand
-    return [];
-  }
+/**
+ * No title is prerendered at build time: AniList rate limits (as low as
+ * 30 requests/min) make a cold build fail. An empty list still enables ISR,
+ * so each title is rendered on its first visit and cached like a static page.
+ */
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  return [];
 }
 
 /**

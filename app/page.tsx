@@ -2,12 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import HeroCarousel from "@/components/HeroCarousel";
 import MediaCard from "@/components/MediaCard";
-import {
-  AniListError,
-  fetchHomeSections,
-  getCurrentSeason,
-  type HomeSections,
-} from "@/lib/anilist";
+import { fetchHomeSections, getCurrentSeason } from "@/lib/anilist";
 import type { Media } from "@/lib/types";
 import styles from "./home.module.css";
 
@@ -61,19 +56,9 @@ function Row({ title, media, href }: SectionProps) {
 }
 
 export default async function HomePage() {
-  let sections: HomeSections | null = null;
-  let errorMessage: string | null = null;
-
-  try {
-    sections = await fetchHomeSections();
-  } catch (err) {
-    errorMessage =
-      err instanceof AniListError ? err.message : "Error loading content.";
-  }
-
-  if (errorMessage || !sections) {
-    return <main className="px-4 py-6">{errorMessage}</main>;
-  }
+  // Errors propagate to app/error.tsx; with ISR the last good version keeps
+  // being served instead of caching an error page
+  const sections = await fetchHomeSections();
 
   const season = getCurrentSeason();
   const year = new Date().getFullYear();
