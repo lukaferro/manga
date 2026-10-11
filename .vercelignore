@@ -1,0 +1,6 @@
+# Never upload local secrets or logs; env vars are configured in the Vercel project
+.env*
+!.env.example
+*.log
+.next
+node_modules
