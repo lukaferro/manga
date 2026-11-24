@@ -62,6 +62,7 @@ body {
   background-repeat: no-repeat;
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  overflow-x: clip;
   transition:
     background-color 0.3s ease,
     color 0.3s ease;

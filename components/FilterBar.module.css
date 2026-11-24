@@ -274,9 +274,23 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .filterContainer {
+    padding: 1rem;
+  }
+
   .primaryRow {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .searchWrapper {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .clearSearchBtn {
+    width: 28px;
+    height: 28px;
   }
 
   .typeSegmented {
@@ -299,12 +313,18 @@
   }
 
   .selectItem {
+    min-width: 0;
+    flex: 1 1 140px;
     max-width: 100%;
   }
 
   .advancedToggleBtn {
     justify-content: center;
     width: 100%;
+  }
+
+  .chip {
+    padding: 0.45rem 0.75rem;
   }
 }
 

@@ -415,7 +415,7 @@
 
 .charGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 1rem;
 }
 
@@ -578,8 +578,30 @@
 }
 
 @media (max-width: 640px) {
+  .container {
+    padding: 0 1rem 3rem;
+  }
+
+  .layout {
+    margin-top: -4rem;
+    gap: 2rem;
+  }
+
   .backButtonWrap {
-    top: 7.25rem;
+    top: 6.75rem;
+    left: 1rem;
+  }
+}
+
+@media (max-width: 440px) {
+  .charThumb {
+    width: 46px;
+    height: 60px;
+  }
+
+  .charSide,
+  .vaSide {
+    gap: 0.5rem;
   }
 }
 

@@ -90,8 +90,8 @@
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.95rem;
   cursor: pointer;
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -206,6 +206,7 @@
 .stepperRow {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -233,6 +234,7 @@
 
 .stepperInput {
   flex: 1;
+  min-width: 0;
   height: 40px;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -369,4 +371,32 @@ fieldset.section {
 fieldset.section > legend {
   padding: 0;
   margin-bottom: 9px;
+}
+
+@media (max-width: 440px) {
+  .modalHeader {
+    padding: 14px 16px;
+  }
+
+  .modalBody {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .quickJumps {
+    width: 100%;
+  }
+
+  .jumpBtn {
+    flex: 1;
+  }
+
+  .modalFooter {
+    flex-wrap: wrap;
+  }
+
+  .rightActions {
+    flex: 1;
+    justify-content: flex-end;
+  }
 }

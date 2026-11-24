@@ -276,3 +276,14 @@
   right: 0;
   transform: none;
 }
+
+@media (max-width: 640px) {
+  .panel {
+    padding: 0.9rem 1rem 1rem;
+  }
+
+  .barRow {
+    grid-template-columns: minmax(72px, 36%) 1fr;
+    gap: 0.5rem;
+  }
+}

@@ -68,7 +68,7 @@
 .panel {
   display: flex;
   flex-direction: column;
-  max-height: min(70vh, 560px);
+  max-height: min(70dvh, 560px);
 }
 
 .inputRow {

@@ -144,10 +144,12 @@
 
 @media (max-width: 640px) {
   .links {
-    gap: 0.9rem;
+    gap: 1rem;
+    padding: 2px 0;
   }
 
   .link {
-    font-size: 0.85rem;
+    font-size: 0.875rem;
+    padding: 0.4rem 0.1rem;
   }
 }

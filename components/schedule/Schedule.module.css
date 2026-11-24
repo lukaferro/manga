@@ -283,6 +283,24 @@
   }
 }
 
+@media (max-width: 480px) {
+  .card {
+    gap: 0.6rem;
+    padding: 0.5rem 0.65rem 0.5rem 0.45rem;
+  }
+
+  .title {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .when {
+    font-size: 0.75rem;
+  }
+}
+
 .airedToggle {
   align-self: center;
   padding: 0.4rem 1rem;

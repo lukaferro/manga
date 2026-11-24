@@ -45,6 +45,16 @@
   }
 }
 
+@media (max-width: 640px) {
+  .overlay {
+    padding: 12px;
+  }
+
+  .top {
+    padding-top: 1rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .overlay,
   .dialog {

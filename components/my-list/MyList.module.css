@@ -453,3 +453,22 @@
   cursor: not-allowed;
   transform: none;
 }
+
+@media (max-width: 640px) {
+  .sortWrap {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .plusBtn,
+  .editBtn {
+    min-height: 36px;
+    padding: 0.45rem 0.85rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .cover {
+    flex: 0 0 80px;
+  }
+}
