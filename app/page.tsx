@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: "Home | Manga & Anime",
 };
 
+// Regenerate at most every 6 hours to conserve Vercel ISR & Data Cache writes
+export const revalidate = 21600;
+
 interface SectionProps {
   title: string;
   media: Media[];
@@ -27,7 +30,7 @@ function browseHref(params: Record<string, string>): string {
 function Row({ title, media, href }: SectionProps) {
   return (
     <section className={styles.rowSection}>
-      <Link href={href} className={styles.headingLink}>
+      <Link href={href} prefetch={false} className={styles.headingLink}>
         <h2 className={styles.heading}>{title}</h2>
         <svg
           viewBox="0 0 24 24"
@@ -86,7 +89,7 @@ export default async function HomePage() {
           type: "ANIME",
           sort: "POPULARITY_DESC",
           season,
-          seasonYear: String(year),
+          year: String(year),
         })}
       />
       <Row

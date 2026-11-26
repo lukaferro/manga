@@ -5,6 +5,7 @@ import styles from "../browse/browse.module.css";
 
 export const metadata: Metadata = {
   title: "My List | Manga & Anime",
+  robots: { index: false, follow: false },
 };
 
 export default function MyListPage() {

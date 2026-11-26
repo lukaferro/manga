@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { AniListAuthError, anilistAuthFetch, getAniListToken, getViewer } from "@/lib/auth";
+import { isValidEntityId } from "@/lib/entity-id";
 import type { ListItem, MediaType } from "@/lib/types";
 
 const COLLECTION_QUERY = `
@@ -78,6 +79,9 @@ export async function GET(request: NextRequest) {
     for (const list of data.MediaListCollection?.lists ?? []) {
       if (list.isCustomList) continue;
       for (const entry of list.entries) {
+        if (!isValidEntityId(entry?.mediaId) || !entry.media || !isValidEntityId(entry.media.id)) {
+          continue;
+        }
         if (seen.has(entry.mediaId)) continue;
         seen.add(entry.mediaId);
         items.push(entry);

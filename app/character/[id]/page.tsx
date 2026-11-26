@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import MediaRoleItem from "@/components/people/MediaRoleItem";
 import PersonLayout, { formatFuzzyDate, type Fact } from "@/components/people/PersonLayout";
 import { AniListError, fetchCharacter } from "@/lib/anilist";
+import { isValidEntityId, parseEntityId, staffHref } from "@/lib/entity-id";
 import type { Character } from "@/lib/types";
 import detail from "@/app/media/[id]/detail.module.css";
 import styles from "@/components/people/People.module.css";
@@ -11,11 +12,16 @@ interface CharacterPageProps {
   params: Promise<{ id: string }>;
 }
 
-export const revalidate = 3600;
+// Conservative 30-day ISR cache: character biographies change rarely
+export const revalidate = 2592000;
+
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  return [];
+}
 
 async function loadCharacter(rawId: string): Promise<Character | null> {
-  const id = Number.parseInt(rawId, 10);
-  if (!Number.isFinite(id) || id <= 0) return null;
+  const id = parseEntityId(rawId);
+  if (id === null) return null;
   try {
     return await fetchCharacter(id);
   } catch (err) {
@@ -30,8 +36,13 @@ function plainText(html: string | null, max = 160): string | undefined {
 
 export async function generateMetadata({ params }: CharacterPageProps): Promise<Metadata> {
   const { id } = await params;
+  if (parseEntityId(id) === null) {
+    return { title: "Character Not Found", robots: { index: false, follow: false } };
+  }
   const character = await loadCharacter(id).catch(() => null);
-  if (!character) return { title: "Character | Manga & Anime" };
+  if (!character) {
+    return { title: "Character | Manga & Anime", robots: { index: false, follow: false } };
+  }
   const name = character.name.full ?? "Character";
   return {
     title: `${name} | Manga & Anime`,
@@ -45,6 +56,8 @@ export async function generateMetadata({ params }: CharacterPageProps): Promise<
 
 export default async function CharacterPage({ params }: CharacterPageProps) {
   const { id } = await params;
+  if (parseEntityId(id) === null) notFound();
+
   const character = await loadCharacter(id);
   if (!character) notFound();
 
@@ -58,7 +71,9 @@ export default async function CharacterPage({ params }: CharacterPageProps) {
     ] as Fact[]
   ).filter((f) => Boolean(f.value));
 
-  const appearances = (character.media?.edges ?? []).filter((e) => e.node);
+  const appearances = (character.media?.edges ?? []).filter(
+    (e) => Boolean(e.node && isValidEntityId(e.node.id)),
+  );
 
   return (
     <PersonLayout
@@ -77,13 +92,14 @@ export default async function CharacterPage({ params }: CharacterPageProps) {
           <ul className={styles.mediaGrid}>
             {appearances.map((edge) => {
               const va = edge.voiceActors?.[0];
+              const vaUrl = va ? staffHref(va.id) : null;
               return (
                 <MediaRoleItem
                   key={edge.node!.id}
                   media={edge.node!}
                   role={edge.characterRole}
-                  person={va}
-                  personHref={va ? `/staff/${va.id}` : undefined}
+                  person={vaUrl ? va : undefined}
+                  personHref={vaUrl ?? undefined}
                 />
               );
             })}

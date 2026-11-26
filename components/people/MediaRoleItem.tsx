@@ -18,7 +18,7 @@ export default function MediaRoleItem({ media, role, person, personHref }: Media
       <MediaCard media={media} />
       {role ? <span className={styles.role}>{role.replace(/_/g, " ").toLowerCase()}</span> : null}
       {person && personHref ? (
-        <Link href={personHref} className={styles.person}>
+        <Link href={personHref} prefetch={false} className={styles.person}>
           {person.image?.medium ? (
             <Image
               src={person.image.medium}

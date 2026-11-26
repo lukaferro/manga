@@ -12,6 +12,7 @@ import {
   fetchMediaDetail,
   localizeAniListLinks,
 } from "@/lib/anilist";
+import { characterHref, isValidEntityId, parseEntityId, staffHref } from "@/lib/entity-id";
 import { toListMedia } from "@/lib/list-store";
 import type { FuzzyDate, Media } from "@/lib/types";
 import styles from "./detail.module.css";
@@ -20,8 +21,8 @@ interface DetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-// Pages are cached and regenerated in the background at most once an hour
-export const revalidate = 3600;
+// Conservative 7-day ISR cache: anime/manga metadata is mostly static
+export const revalidate = 604800;
 
 /**
  * No title is prerendered at build time: AniList rate limits (as low as
@@ -33,12 +34,12 @@ export async function generateStaticParams(): Promise<{ id: string }[]> {
 }
 
 /**
- * Null for unknown ids (rendered as 404). Other failures are thrown so the
- * error boundary shows them and no error page gets cached.
+ * Null for invalid or unknown ids (rendered as 404 before any upstream fetch).
+ * Other failures are thrown so the error boundary shows them and no error page gets cached.
  */
 async function loadMedia(rawId: string): Promise<Media | null> {
-  const id = Number.parseInt(rawId, 10);
-  if (!Number.isFinite(id) || id <= 0) return null;
+  const id = parseEntityId(rawId);
+  if (id === null) return null;
   try {
     return (await fetchMediaDetail(id)).Media;
   } catch (err) {
@@ -51,9 +52,20 @@ export async function generateMetadata({
   params,
 }: DetailPageProps): Promise<Metadata> {
   const { id } = await params;
+  if (parseEntityId(id) === null) {
+    return {
+      title: "Media Not Found",
+      robots: { index: false, follow: false },
+    };
+  }
   try {
     const media = await loadMedia(id);
-    if (!media) return { title: "Media Not Found" };
+    if (!media) {
+      return {
+        title: "Media Not Found",
+        robots: { index: false, follow: false },
+      };
+    }
     const title = media.title.romaji || media.title.english || "Media Detail";
     const plainDesc = media.description
       ? media.description.replace(/<[^>]*>?/gm, "").slice(0, 160)
@@ -86,16 +98,21 @@ function formatRelationLabel(type: string | null): string {
 
 export default async function MediaDetailPage({ params }: DetailPageProps) {
   const { id } = await params;
+  if (parseEntityId(id) === null) notFound();
 
   const media = await loadMedia(id);
-  if (!media) notFound();
+  if (!media || !isValidEntityId(media.id)) notFound();
 
   const mainTitle =
     media.title.romaji ?? media.title.english ?? media.title.native ?? "Untitled";
 
   const recommendations = (media.recommendations?.nodes ?? [])
     .map((node) => node.mediaRecommendation)
-    .filter(Boolean);
+    .filter((rec): rec is NonNullable<typeof rec> => Boolean(rec && isValidEntityId(rec.id)));
+
+  const relatedEdges = (media.relations?.edges ?? []).filter(
+    (edge) => Boolean(edge.node && isValidEntityId(edge.node.id)),
+  );
 
   return (
     <main className={styles.page}>
@@ -319,6 +336,7 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
                   <Link
                     key={g}
                     href={`/browse?genre=${encodeURIComponent(g)}`}
+                    prefetch={false}
                     className={styles.genreTag}
                   >
                     {g}
@@ -346,12 +364,15 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
                   {media.characters.edges.map((edge) => {
                     if (!edge.node) return null;
                     const char = edge.node;
+                    const charUrl = characterHref(char.id);
+                    if (!charUrl) return null;
                     const va = edge.voiceActors?.[0];
+                    const vaUrl = va ? staffHref(va.id) : null;
 
                     return (
                       <div key={char.id} className={styles.charCard}>
                         {/* Character info */}
-                        <Link href={`/character/${char.id}`} className={styles.charSide}>
+                        <Link href={charUrl} prefetch={false} className={styles.charSide}>
                           {char.image?.large ? (
                             <Image
                               src={char.image.large}
@@ -372,8 +393,8 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
                         </Link>
 
                         {/* Japanese Voice Actor info if available */}
-                        {va ? (
-                          <Link href={`/staff/${va.id}`} className={styles.vaSide}>
+                        {va && vaUrl ? (
+                          <Link href={vaUrl} prefetch={false} className={styles.vaSide}>
                             <div className={styles.vaTexts}>
                               <p className={styles.vaName}>
                                 {va.name?.full ?? "Voice Actor"}
@@ -401,11 +422,11 @@ export default async function MediaDetailPage({ params }: DetailPageProps) {
             ) : null}
 
             {/* Related Media */}
-            {media.relations?.edges?.length ? (
+            {relatedEdges.length > 0 ? (
               <section className={styles.relationsSection}>
                 <h2 className={styles.sectionTitle}>Related Media</h2>
                 <div className={styles.relationGrid}>
-                  {media.relations.edges.map((edge, i) =>
+                  {relatedEdges.map((edge, i) =>
                     edge.node ? (
                       <div
                         key={`${edge.node.id}-${i}`}

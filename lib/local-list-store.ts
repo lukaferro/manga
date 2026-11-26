@@ -1,3 +1,4 @@
+import { isValidEntityId } from "./entity-id";
 import type { ListStore } from "./list-store";
 import type { ListItem, MediaListEntry } from "./types";
 
@@ -32,7 +33,9 @@ function writeLocalList(data: LocalListData) {
 }
 
 export function localListItems(): ListItem[] {
-  return Object.values(readLocalList().items);
+  return Object.values(readLocalList().items).filter(
+    (item) => item && isValidEntityId(item.mediaId) && item.media && isValidEntityId(item.media.id),
+  );
 }
 
 export function clearLocalList() {

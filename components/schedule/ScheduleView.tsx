@@ -4,6 +4,7 @@ import { Fragment, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { STATUS_CONFIG, statusLabel } from "@/lib/list-status";
+import { mediaHref } from "@/lib/entity-id";
 import { groupByLocalDay } from "@/lib/schedule";
 import { formatShortCountdown, useNow } from "@/lib/time";
 import { useListCollection } from "@/lib/use-list";
@@ -122,6 +123,8 @@ export default function ScheduleView({ items }: { items: AiringScheduleItem[] })
       ) : (
         <ol className={styles.timeline}>
           {visible.map((item, i) => {
+            const href = mediaHref(item.media?.id);
+            if (!href) return null;
             const status = listStatus.get(item.media.id);
             const aired = item.airingAt <= now;
             const cover = item.media.coverImage.large ?? item.media.coverImage.medium;
@@ -140,7 +143,8 @@ export default function ScheduleView({ items }: { items: AiringScheduleItem[] })
                     })}
                   </time>
                   <Link
-                    href={`/media/${item.media.id}`}
+                    href={href}
+                    prefetch={false}
                     className={`${styles.card} ${status ? styles.cardInList : ""}`}
                     style={
                       status

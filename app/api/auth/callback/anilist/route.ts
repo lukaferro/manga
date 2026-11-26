@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  LOGGED_IN_COOKIE,
   RETURN_TO_COOKIE,
   STATE_COOKIE,
   TOKEN_COOKIE,
@@ -69,12 +70,20 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(redirectUrl.toString());
 
     // AniList tokens are valid for 1 year
-    response.cookies.set(TOKEN_COOKIE, tokenData.access_token, {
+    const cookieOpts = {
       path: "/",
       maxAge: 31536000,
-      httpOnly: true,
-      sameSite: "lax",
+      sameSite: "lax" as const,
       secure: process.env.NODE_ENV === "production",
+    };
+    response.cookies.set(TOKEN_COOKIE, tokenData.access_token, {
+      ...cookieOpts,
+      httpOnly: true,
+    });
+    // Non-sensitive hint cookie so guest visitors skip /api/auth/me on mount
+    response.cookies.set(LOGGED_IN_COOKIE, "1", {
+      ...cookieOpts,
+      httpOnly: false,
     });
 
     response.cookies.delete(RETURN_TO_COOKIE);

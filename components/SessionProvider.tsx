@@ -12,10 +12,24 @@ interface SessionValue {
 
 const SessionContext = createContext<SessionValue>({ user: null, status: "loading" });
 
+const LOGGED_IN_COOKIE = "anilist_logged_in";
+
+function hasAuthHintCookie(): boolean {
+  return document.cookie
+    .split(";")
+    .some((part) => part.trim() === `${LOGGED_IN_COOKIE}=1`);
+}
+
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [value, setValue] = useState<SessionValue>({ user: null, status: "loading" });
 
   useEffect(() => {
+    // Skip the /api/auth/me serverless invocation for anonymous guests
+    if (!hasAuthHintCookie()) {
+      const id = setTimeout(() => setValue({ user: null, status: "guest" }), 0);
+      return () => clearTimeout(id);
+    }
+
     let cancelled = false;
 
     fetch("/api/auth/me", { cache: "no-store" })

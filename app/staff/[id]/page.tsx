@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import MediaRoleItem from "@/components/people/MediaRoleItem";
 import PersonLayout, { formatFuzzyDate, type Fact } from "@/components/people/PersonLayout";
 import { AniListError, fetchStaff } from "@/lib/anilist";
+import { characterHref, isValidEntityId, parseEntityId } from "@/lib/entity-id";
 import type { Staff } from "@/lib/types";
 import detail from "@/app/media/[id]/detail.module.css";
 import styles from "@/components/people/People.module.css";
@@ -11,11 +12,16 @@ interface StaffPageProps {
   params: Promise<{ id: string }>;
 }
 
-export const revalidate = 3600;
+// Conservative 30-day ISR cache: staff profiles change rarely
+export const revalidate = 2592000;
+
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  return [];
+}
 
 async function loadStaff(rawId: string): Promise<Staff | null> {
-  const id = Number.parseInt(rawId, 10);
-  if (!Number.isFinite(id) || id <= 0) return null;
+  const id = parseEntityId(rawId);
+  if (id === null) return null;
   try {
     return await fetchStaff(id);
   } catch (err) {
@@ -26,8 +32,13 @@ async function loadStaff(rawId: string): Promise<Staff | null> {
 
 export async function generateMetadata({ params }: StaffPageProps): Promise<Metadata> {
   const { id } = await params;
+  if (parseEntityId(id) === null) {
+    return { title: "Staff Not Found", robots: { index: false, follow: false } };
+  }
   const staff = await loadStaff(id).catch(() => null);
-  if (!staff) return { title: "Staff | Manga & Anime" };
+  if (!staff) {
+    return { title: "Staff | Manga & Anime", robots: { index: false, follow: false } };
+  }
   const name = staff.name.full ?? "Staff";
   return {
     title: `${name} | Manga & Anime`,
@@ -41,6 +52,8 @@ export async function generateMetadata({ params }: StaffPageProps): Promise<Meta
 
 export default async function StaffPage({ params }: StaffPageProps) {
   const { id } = await params;
+  if (parseEntityId(id) === null) notFound();
+
   const staff = await loadStaff(id);
   if (!staff) notFound();
 
@@ -62,8 +75,12 @@ export default async function StaffPage({ params }: StaffPageProps) {
     ] as Fact[]
   ).filter((f) => f.value != null && f.value !== "");
 
-  const roles = (staff.characterMedia?.edges ?? []).filter((e) => e.node);
-  const production = (staff.staffMedia?.edges ?? []).filter((e) => e.node);
+  const roles = (staff.characterMedia?.edges ?? []).filter(
+    (e) => Boolean(e.node && isValidEntityId(e.node.id)),
+  );
+  const production = (staff.staffMedia?.edges ?? []).filter(
+    (e) => Boolean(e.node && isValidEntityId(e.node.id)),
+  );
 
   return (
     <PersonLayout
@@ -82,13 +99,14 @@ export default async function StaffPage({ params }: StaffPageProps) {
           <ul className={styles.mediaGrid}>
             {roles.map((edge, i) => {
               const character = edge.characters?.[0];
+              const charUrl = character ? characterHref(character.id) : null;
               return (
                 <MediaRoleItem
                   key={`${edge.node!.id}-${character?.id ?? i}`}
                   media={edge.node!}
                   role={edge.characterRole}
-                  person={character}
-                  personHref={character ? `/character/${character.id}` : undefined}
+                  person={charUrl ? character : undefined}
+                  personHref={charUrl ?? undefined}
                 />
               );
             })}

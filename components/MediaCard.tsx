@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { mediaHref } from "@/lib/entity-id";
 import type { MediaCardData } from "@/lib/types";
 import styles from "./MediaCard.module.css";
 
@@ -12,10 +13,13 @@ export function mediaTitle(media: MediaCardData): string {
 }
 
 export default function MediaCard({ media }: MediaCardProps) {
+  const href = mediaHref(media?.id);
+  if (!href) return null;
+
   const src = media.coverImage.large ?? media.coverImage.medium ?? "";
 
   return (
-    <Link href={`/media/${media.id}`} className={styles.card}>
+    <Link href={href} prefetch={false} className={styles.card}>
       <div className={styles.cover}>
         {src ? (
           <Image

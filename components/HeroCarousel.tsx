@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { mediaTitle } from "@/components/MediaCard";
+import { mediaHref } from "@/lib/entity-id";
 import type { Media } from "@/lib/types";
 import styles from "./HeroCarousel.module.css";
 
@@ -64,6 +65,8 @@ export default function HeroCarousel({ items }: HeroCarouselProps) {
         const description = media.description ? stripHtml(media.description) : "";
         const genres = media.genres.slice(0, 3);
 
+        const href = mediaHref(media?.id);
+
         return (
           <article
             key={media.id}
@@ -96,9 +99,11 @@ export default function HeroCarousel({ items }: HeroCarouselProps) {
               {description ? (
                 <p className={styles.desc}>{description}</p>
               ) : null}
-              <Link href={`/media/${media.id}`} className={styles.button}>
-                Details
-              </Link>
+              {href ? (
+                <Link href={href} prefetch={false} className={styles.button}>
+                  Details
+                </Link>
+              ) : null}
             </div>
           </article>
         );

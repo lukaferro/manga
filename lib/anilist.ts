@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { isValidEntityId, parseEntityId } from "./entity-id";
 import type {
   Character,
   GenresResponse,
@@ -6,13 +7,23 @@ import type {
   MediaListParams,
   MediaListResponse,
   MediaSeason,
-  MediaSort,
   MediaType,
   Staff,
 } from "./types";
 
 const ANILIST_URL = "https://graphql.anilist.co";
 const MAX_RATE_LIMIT_RETRIES = 4;
+
+/** Conservative ISR / Data Cache TTLs (seconds) to stay well within Vercel Free limits */
+export const HOME_REVALIDATE = 21_600; // 6 hours
+export const SCHEDULE_REVALIDATE = 21_600; // 6 hours
+export const MEDIA_REVALIDATE = 604_800; // 7 days
+export const STATIC_ENTITY_REVALIDATE = 2_592_000; // 30 days (characters, staff, genres)
+
+export interface FetchCacheOptions {
+  revalidate?: number;
+  cache?: RequestCache;
+}
 
 export class AniListError extends Error {
   status: number;
@@ -27,18 +38,25 @@ export class AniListError extends Error {
 export async function anilistFetch<T>(
   query: string,
   variables: Record<string, unknown> = {},
-  { revalidate = 3600 }: { revalidate?: number } = {},
+  options: FetchCacheOptions = {},
 ): Promise<T> {
-  const request = () =>
-    fetch(ANILIST_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ query, variables }),
-      next: { revalidate },
-    });
+  const { cache: cacheMode, revalidate } = options;
+  const fetchInit: RequestInit & { next?: { revalidate: number } } = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ query, variables }),
+  };
+
+  if (cacheMode === "no-store") {
+    fetchInit.cache = "no-store";
+  } else {
+    fetchInit.next = { revalidate: revalidate ?? HOME_REVALIDATE };
+  }
+
+  const request = () => fetch(ANILIST_URL, fetchInit);
 
   let res = await request();
 
@@ -239,6 +257,7 @@ export const GENRES_QUERY = `
 
 export async function fetchMediaList(
   params: MediaListParams & { score?: string },
+  options: FetchCacheOptions = { cache: "no-store" },
 ): Promise<MediaListResponse> {
   const variables = {
     page: params.page ?? 1,
@@ -251,21 +270,25 @@ export async function fetchMediaList(
     format: params.format ? [params.format] : undefined,
     status: params.status,
     sort: params.sort ? [params.sort] : ["POPULARITY_DESC"],
-    score: params.score ? parseFloat(params.score) : undefined,
   };
 
-  return anilistFetch<MediaListResponse>(MEDIA_LIST_QUERY, variables);
+  return anilistFetch<MediaListResponse>(MEDIA_LIST_QUERY, variables, options);
 }
 
 // Wrapped in React cache(): POST fetches aren't deduplicated automatically,
 // and both generateMetadata and the page request the same media.
-export const fetchMediaDetail = cache(
-  async (id: number): Promise<MediaDetailResponse> =>
-    anilistFetch<MediaDetailResponse>(MEDIA_DETAIL_QUERY, { id }),
-);
+export const fetchMediaDetail = cache(async (id: number): Promise<MediaDetailResponse> => {
+  const validId = parseEntityId(id);
+  if (validId === null) return { Media: null };
+  return anilistFetch<MediaDetailResponse>(
+    MEDIA_DETAIL_QUERY,
+    { id: validId },
+    { revalidate: MEDIA_REVALIDATE },
+  );
+});
 
 export async function fetchGenres(): Promise<GenresResponse> {
-  return anilistFetch<GenresResponse>(GENRES_QUERY);
+  return anilistFetch<GenresResponse>(GENRES_QUERY, {}, { revalidate: STATIC_ENTITY_REVALIDATE });
 }
 
 export interface HomeSections {
@@ -283,46 +306,77 @@ export interface HomeSections {
 
 const HOME_PER_PAGE = 12;
 
-async function fetchHomeList(
-  type: MediaType,
-  sort: MediaSort,
-  season?: MediaSeason,
-  seasonYear?: number,
-) {
-  const res = await fetchMediaList({
-    type,
-    sort,
-    perPage: HOME_PER_PAGE,
-    season,
-    seasonYear,
-  });
-  return res.Page.media;
-}
+const HOME_SECTIONS_QUERY = `
+  query ($perPage: Int, $season: MediaSeason, $seasonYear: Int) {
+    animeTrending: Page(page: 1, perPage: $perPage) {
+      media(type: ANIME, sort: [TRENDING_DESC], isAdult: false) {
+        ${MEDIA_FIELDS}
+      }
+    }
+    animeSeason: Page(page: 1, perPage: $perPage) {
+      media(
+        type: ANIME
+        season: $season
+        seasonYear: $seasonYear
+        sort: [POPULARITY_DESC]
+        isAdult: false
+      ) {
+        ${MEDIA_FIELDS}
+      }
+    }
+    animeTop: Page(page: 1, perPage: $perPage) {
+      media(type: ANIME, sort: [SCORE_DESC], isAdult: false) {
+        ${MEDIA_FIELDS}
+      }
+    }
+    mangaTrending: Page(page: 1, perPage: $perPage) {
+      media(type: MANGA, sort: [TRENDING_DESC], isAdult: false) {
+        ${MEDIA_FIELDS}
+      }
+    }
+    mangaPopular: Page(page: 1, perPage: $perPage) {
+      media(type: MANGA, sort: [POPULARITY_DESC], isAdult: false) {
+        ${MEDIA_FIELDS}
+      }
+    }
+    mangaTop: Page(page: 1, perPage: $perPage) {
+      media(type: MANGA, sort: [SCORE_DESC], isAdult: false) {
+        ${MEDIA_FIELDS}
+      }
+    }
+  }
+`;
 
 export async function fetchHomeSections(): Promise<HomeSections> {
   const year = new Date().getFullYear();
   const currentSeason = getCurrentSeason();
 
-  const [animeTrending, animeSeason, animeTop, mangaTrending, mangaPopular, mangaTop] =
-    await Promise.all([
-      fetchHomeList("ANIME", "TRENDING_DESC"),
-      fetchHomeList("ANIME", "POPULARITY_DESC", currentSeason, year),
-      fetchHomeList("ANIME", "SCORE_DESC"),
-      fetchHomeList("MANGA", "TRENDING_DESC"),
-      fetchHomeList("MANGA", "POPULARITY_DESC"),
-      fetchHomeList("MANGA", "SCORE_DESC"),
-    ]);
+  const data = await anilistFetch<{
+    animeTrending: { media: MediaListResponse["Page"]["media"] };
+    animeSeason: { media: MediaListResponse["Page"]["media"] };
+    animeTop: { media: MediaListResponse["Page"]["media"] };
+    mangaTrending: { media: MediaListResponse["Page"]["media"] };
+    mangaPopular: { media: MediaListResponse["Page"]["media"] };
+    mangaTop: { media: MediaListResponse["Page"]["media"] };
+  }>(
+    HOME_SECTIONS_QUERY,
+    { perPage: HOME_PER_PAGE, season: currentSeason, seasonYear: year },
+    { revalidate: HOME_REVALIDATE },
+  );
+
+  const valid = (list: MediaListResponse["Page"]["media"] | undefined) =>
+    (list ?? []).filter((m) => isValidEntityId(m?.id));
 
   return {
     anime: {
-      trending: animeTrending,
-      season: animeSeason,
-      top: animeTop,
+      trending: valid(data.animeTrending?.media),
+      season: valid(data.animeSeason?.media),
+      top: valid(data.animeTop?.media),
     },
     manga: {
-      trending: mangaTrending,
-      popular: mangaPopular,
-      top: mangaTop,
+      trending: valid(data.mangaTrending?.media),
+      popular: valid(data.mangaPopular?.media),
+      top: valid(data.mangaTop?.media),
     },
   };
 }
@@ -409,15 +463,16 @@ const QUICK_SEARCH_QUERY = `
 `;
 
 export async function fetchQuickSearch(search: string): Promise<QuickSearchResults> {
+  // Never write user search terms to Next.js Data Cache; /api/search handles CDN caching
   const data = await anilistFetch<{
     media: { media: QuickSearchMedia[] };
     characters: { characters: QuickSearchPerson[] };
     staff: { staff: QuickSearchPerson[] };
-  }>(QUICK_SEARCH_QUERY, { search });
+  }>(QUICK_SEARCH_QUERY, { search }, { cache: "no-store" });
   return {
-    media: data.media.media,
-    characters: data.characters.characters,
-    staff: data.staff.staff,
+    media: (data.media?.media ?? []).filter((m) => isValidEntityId(m?.id)),
+    characters: (data.characters?.characters ?? []).filter((c) => isValidEntityId(c?.id)),
+    staff: (data.staff?.staff ?? []).filter((p) => isValidEntityId(p?.id)),
   };
 }
 
@@ -482,11 +537,13 @@ export async function fetchAiringSchedule(from: number, to: number): Promise<Air
   for (let page = 1; page <= MAX_SCHEDULE_PAGES; page++) {
     const data = await anilistFetch<{
       Page: { pageInfo: { hasNextPage: boolean }; airingSchedules: AiringScheduleItem[] };
-    }>(AIRING_SCHEDULE_QUERY, { page, from, to }, { revalidate: 1800 });
+    }>(AIRING_SCHEDULE_QUERY, { page, from, to }, { revalidate: SCHEDULE_REVALIDATE });
     items.push(...data.Page.airingSchedules);
     if (!data.Page.pageInfo.hasNextPage) break;
   }
-  return items.filter((item) => item.media && !item.media.isAdult);
+  return items.filter(
+    (item) => item.media && isValidEntityId(item.media.id) && !item.media.isAdult,
+  );
 }
 
 const MEDIA_THUMB_FIELDS = `
@@ -612,15 +669,29 @@ const STAFF_QUERY = `
   }
 `;
 
-export const fetchCharacter = cache(
-  async (id: number): Promise<Character | null> =>
-    (await anilistFetch<{ Character: Character | null }>(CHARACTER_QUERY, { id })).Character,
-);
+export const fetchCharacter = cache(async (id: number): Promise<Character | null> => {
+  const validId = parseEntityId(id);
+  if (validId === null) return null;
+  return (
+    await anilistFetch<{ Character: Character | null }>(
+      CHARACTER_QUERY,
+      { id: validId },
+      { revalidate: STATIC_ENTITY_REVALIDATE },
+    )
+  ).Character;
+});
 
-export const fetchStaff = cache(
-  async (id: number): Promise<Staff | null> =>
-    (await anilistFetch<{ Staff: Staff | null }>(STAFF_QUERY, { id })).Staff,
-);
+export const fetchStaff = cache(async (id: number): Promise<Staff | null> => {
+  const validId = parseEntityId(id);
+  if (validId === null) return null;
+  return (
+    await anilistFetch<{ Staff: Staff | null }>(
+      STAFF_QUERY,
+      { id: validId },
+      { revalidate: STATIC_ENTITY_REVALIDATE },
+    )
+  ).Staff;
+});
 
 /**
  * Point AniList links inside description HTML to this app's own pages,
@@ -628,7 +699,7 @@ export const fetchStaff = cache(
  */
 export function localizeAniListLinks(html: string): string {
   return html.replace(
-    /href=(["'])https?:\/\/anilist\.co\/(anime|manga|character|staff)\/(\d+)[^"']*\1/g,
+    /href=(["'])https?:\/\/anilist\.co\/(anime|manga|character|staff)\/([1-9]\d*)[^"']*\1/g,
     (_match, quote: string, kind: string, id: string) => {
       const path = kind === "anime" || kind === "manga" ? "media" : kind;
       return `href=${quote}/${path}/${id}${quote}`;

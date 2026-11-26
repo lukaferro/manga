@@ -11,6 +11,7 @@ export interface AniListUser {
 }
 
 export const TOKEN_COOKIE = "anilist_token";
+export const LOGGED_IN_COOKIE = "anilist_logged_in";
 export const RETURN_TO_COOKIE = "auth_return_to";
 export const STATE_COOKIE = "auth_state";
 

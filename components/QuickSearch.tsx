@@ -6,11 +6,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal";
 import type { QuickSearchMedia, QuickSearchPerson, QuickSearchResults } from "@/lib/anilist";
+import { characterHref, isValidEntityHref, mediaHref, staffHref } from "@/lib/entity-id";
 import styles from "./QuickSearch.module.css";
 
 const RECENT_KEY = "quicksearch:recent";
 const MAX_RECENT = 6;
-const DEBOUNCE_MS = 250;
+const DEBOUNCE_MS = 350;
 
 interface ResultItem {
   key: string;
@@ -21,7 +22,9 @@ interface ResultItem {
   color: string | null;
 }
 
-function mediaToItem(m: QuickSearchMedia): ResultItem {
+function mediaToItem(m: QuickSearchMedia): ResultItem | null {
+  const href = mediaHref(m?.id);
+  if (!href) return null;
   const title = m.title.romaji || m.title.english || m.title.native || "Untitled";
   const parts = [
     m.type === "ANIME" ? "Anime" : "Manga",
@@ -31,7 +34,7 @@ function mediaToItem(m: QuickSearchMedia): ResultItem {
   ].filter(Boolean);
   return {
     key: `media-${m.id}`,
-    href: `/media/${m.id}`,
+    href,
     title,
     subtitle: parts.join(" · "),
     image: m.coverImage.medium,
@@ -39,12 +42,14 @@ function mediaToItem(m: QuickSearchMedia): ResultItem {
   };
 }
 
-function personToItem(p: QuickSearchPerson, kind: "character" | "staff"): ResultItem {
+function personToItem(p: QuickSearchPerson, kind: "character" | "staff"): ResultItem | null {
+  const href = kind === "character" ? characterHref(p?.id) : staffHref(p?.id);
+  if (!href) return null;
   const role =
     kind === "character" ? "Character" : (p.primaryOccupations?.slice(0, 2).join(", ") || "Staff");
   return {
     key: `${kind}-${p.id}`,
-    href: `/${kind}/${p.id}`,
+    href,
     title: p.name.full || p.name.native || "Unknown",
     subtitle: [role, p.name.native].filter(Boolean).join(" · "),
     image: p.image?.medium ?? null,
@@ -55,7 +60,13 @@ function personToItem(p: QuickSearchPerson, kind: "character" | "staff"): Result
 function readRecent(): ResultItem[] {
   try {
     const raw = localStorage.getItem(RECENT_KEY);
-    return raw ? (JSON.parse(raw) as ResultItem[]) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is ResultItem =>
+        Boolean(item && typeof item === "object" && isValidEntityHref(item.href)),
+    );
   } catch {
     return [];
   }
@@ -157,10 +168,10 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
         setResults({
           query: trimmed,
           items: [
-            ...data.media.map(mediaToItem),
+            ...(data.media ?? []).map(mediaToItem),
             ...(data.characters ?? []).map((c) => personToItem(c, "character")),
             ...(data.staff ?? []).map((p) => personToItem(p, "staff")),
-          ],
+          ].filter((item): item is ResultItem => item !== null),
         });
         setError(false);
         setActive(0);
@@ -180,6 +191,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
 
   const go = useCallback(
     (item: ResultItem) => {
+      if (!isValidEntityHref(item.href)) return;
       saveRecent(item);
       onClose();
       router.push(item.href);
@@ -301,6 +313,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
         {!showingRecent && (
           <Link
             href={`/browse?search=${encodeURIComponent(trimmed)}`}
+            prefetch={false}
             className={styles.allLink}
             onClick={onClose}
           >

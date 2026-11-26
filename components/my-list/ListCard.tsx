@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { STATUS_CONFIG, progressUnit, statusLabel } from "@/lib/list-status";
+import { mediaHref } from "@/lib/entity-id";
 import { listItemTitle, maxProgress, statusForProgress } from "@/lib/list-store";
 import { episodesBehind } from "@/lib/my-list";
 import { formatShortCountdown, useNow } from "@/lib/time";
@@ -30,6 +31,7 @@ export default function ListCard({ item, pending, onUpdate, onEdit }: ListCardPr
   const cover = media.coverImage.large ?? media.coverImage.medium;
   const canIncrement = item.status !== "COMPLETED" && (max == null || progress < max);
   const nextEp = media.nextAiringEpisode;
+  const href = mediaHref(media?.id ?? item.mediaId);
 
   function increment() {
     const next = progress + 1;
@@ -40,34 +42,50 @@ export default function ListCard({ item, pending, onUpdate, onEdit }: ListCardPr
     });
   }
 
+  const coverContent = (
+    <>
+      {cover ? (
+        <Image
+          src={cover}
+          alt=""
+          fill
+          sizes="(max-width: 640px) 30vw, 120px"
+          className={styles.coverImg}
+        />
+      ) : null}
+      {behind > 0 && (
+        <span className={styles.behindBadge} title={`${behind} aired ${unit.long.toLowerCase()} not watched yet`}>
+          {behind} behind
+        </span>
+      )}
+    </>
+  );
+
   return (
     <article
       className={`${styles.card} ${pending ? styles.cardPending : ""}`}
       style={{ "--status-color": cfg.color } as React.CSSProperties}
     >
-      <Link href={`/media/${media.id}`} className={styles.cover} tabIndex={-1}>
-        {cover ? (
-          <Image
-            src={cover}
-            alt=""
-            fill
-            sizes="(max-width: 640px) 30vw, 120px"
-            className={styles.coverImg}
-          />
-        ) : null}
-        {behind > 0 && (
-          <span className={styles.behindBadge} title={`${behind} aired ${unit.long.toLowerCase()} not watched yet`}>
-            {behind} behind
-          </span>
-        )}
-      </Link>
+      {href ? (
+        <Link href={href} prefetch={false} className={styles.cover} tabIndex={-1}>
+          {coverContent}
+        </Link>
+      ) : (
+        <div className={styles.cover}>{coverContent}</div>
+      )}
 
       <div className={styles.cardBody}>
         <span className={styles.statusChip}>
           <span aria-hidden="true">{cfg.icon}</span> {statusLabel(item.status, media.type)}
         </span>
         <h3 className={styles.cardTitle}>
-          <Link href={`/media/${media.id}`}>{title}</Link>
+          {href ? (
+            <Link href={href} prefetch={false}>
+              {title}
+            </Link>
+          ) : (
+            <span>{title}</span>
+          )}
         </h3>
 
         <div className={styles.cardMeta}>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import MediaCard from "@/components/MediaCard";
+import { isValidEntityId } from "@/lib/entity-id";
 import type { MediaCardData } from "@/lib/types";
 import styles from "@/app/browse/browse.module.css";
 
@@ -43,9 +44,9 @@ export default function InfiniteGrid({
       if (!res.ok) throw new Error();
       const data: { media: MediaCardData[]; hasNextPage: boolean } = await res.json();
       setMedia((prev) => {
-        // AniList pagination can shift between requests; never render duplicates
+        // AniList pagination can shift between requests; never render duplicates or invalid IDs
         const seen = new Set(prev.map((m) => m.id));
-        return [...prev, ...data.media.filter((m) => !seen.has(m.id))];
+        return [...prev, ...data.media.filter((m) => isValidEntityId(m?.id) && !seen.has(m.id))];
       });
       setPage(next);
       setHasNextPage(data.hasNextPage);
@@ -91,6 +92,7 @@ export default function InfiniteGrid({
         ) : hasNextPage ? (
           <a
             href={nextHref}
+            rel="nofollow"
             className={styles.button}
             aria-disabled={loading}
             onClick={(e) => {

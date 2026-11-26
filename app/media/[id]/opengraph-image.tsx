@@ -1,10 +1,12 @@
 import { ImageResponse } from "next/og";
+import { notFound } from "next/navigation";
 import { AniListError, fetchMediaDetail } from "@/lib/anilist";
+import { parseEntityId } from "@/lib/entity-id";
 
 export const alt = "Anime or manga cover, title and score";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const revalidate = 86400;
+export const revalidate = 604800;
 
 const FALLBACK_COLOR = "#d63a5a";
 
@@ -12,7 +14,7 @@ const FALLBACK_COLOR = "#d63a5a";
 async function loadCover(url: string | null | undefined): Promise<string | null> {
   if (!url) return null;
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return null;
     const type = res.headers.get("content-type") ?? "image/jpeg";
     if (!/^image\/(jpeg|png)/.test(type)) return null;
@@ -25,13 +27,17 @@ async function loadCover(url: string | null | undefined): Promise<string | null>
 
 export default async function OpengraphImage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const media = await fetchMediaDetail(Number.parseInt(id, 10))
+  const parsedId = parseEntityId(id);
+  if (parsedId === null) notFound();
+
+  const media = await fetchMediaDetail(parsedId)
     .then((res) => res.Media)
     .catch((err) => {
-      // Unknown id: generic card. Anything else: fail, so no fallback gets cached
       if (err instanceof AniListError && err.status === 404) return null;
       throw err;
     });
+
+  if (!media) notFound();
 
   // The default font has Latin glyphs only, so prefer romanised titles
   const title = media

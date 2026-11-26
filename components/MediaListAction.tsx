@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import ListEntryModal from "@/components/ListEntryModal";
 import { loginHref, useSession } from "@/components/SessionProvider";
 import { STATUS_CONFIG, progressUnit, statusLabel } from "@/lib/list-status";
+import { mediaHref } from "@/lib/entity-id";
 import { listItemTitle, maxProgress, statusForProgress } from "@/lib/list-store";
 import { useListEntry } from "@/lib/use-list";
 import type { ListMedia } from "@/lib/types";
@@ -94,7 +95,7 @@ export default function MediaListAction({ media }: MediaListActionProps) {
       {store.kind === "local" && (
         <p className={styles.loginHelperText}>
           Saved on this device ·{" "}
-          <a href={loginHref(pathname || `/media/${media.id}`)} className={styles.helperLink}>
+          <a href={loginHref(pathname || mediaHref(media?.id) || "/")} className={styles.helperLink}>
             Log in with AniList
           </a>{" "}
           to sync

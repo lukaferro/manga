@@ -2,26 +2,52 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import FilterBar from "@/components/FilterBar";
 import InfiniteGrid from "@/components/browse/InfiniteGrid";
-import { AniListError, fetchGenres, fetchMediaList } from "@/lib/anilist";
+import { AniListError, HOME_REVALIDATE, fetchGenres, fetchMediaList } from "@/lib/anilist";
 import {
   filtersToQuery,
   parseBrowseParams,
   toMediaListParams,
   type BrowseFilters,
 } from "@/lib/browse-filters";
+import { isValidEntityId } from "@/lib/entity-id";
 import styles from "./browse.module.css";
 import { LoadingGrid } from "./loading";
 
-export const metadata: Metadata = {
-  title: "Browse | Manga & Anime",
-};
+// Always dynamic SSR: never create ISR page entries for arbitrary filter/query combinations
+export const dynamic = "force-dynamic";
 
 type RawParams = Record<string, string | string[] | undefined>;
 
-async function MediaGrid({ filters, page }: { filters: BrowseFilters; page: number }) {
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<RawParams>;
+}): Promise<Metadata> {
+  const raw = await searchParams;
+  const hasQueryParams = Object.keys(raw).length > 0;
+  return {
+    title: "Browse | Manga & Anime",
+    ...(hasQueryParams ? { robots: { index: false, follow: true } } : {}),
+  };
+}
+
+async function MediaGrid({
+  filters,
+  page,
+  isDefaultView,
+}: {
+  filters: BrowseFilters;
+  page: number;
+  isDefaultView: boolean;
+}) {
   let result;
   try {
-    result = (await fetchMediaList(toMediaListParams(filters, page))).Page;
+    // Only cache the single canonical unfiltered /browse page (1 Data Cache key);
+    // filtered, searched, or paginated requests bypass Data Cache to prevent ISR write bloat.
+    const cacheOptions = isDefaultView
+      ? { revalidate: HOME_REVALIDATE }
+      : { cache: "no-store" as const };
+    result = (await fetchMediaList(toMediaListParams(filters, page), cacheOptions)).Page;
   } catch (err) {
     console.error("Browse fetch failed:", err instanceof AniListError ? err.message : err);
     return (
@@ -32,7 +58,9 @@ async function MediaGrid({ filters, page }: { filters: BrowseFilters; page: numb
     );
   }
 
-  if (result.media.length === 0) {
+  const validMedia = result.media.filter((m) => isValidEntityId(m?.id));
+
+  if (validMedia.length === 0) {
     return (
       <div className={styles.emptyState}>
         <p className={styles.emptyTitle}>No results found</p>
@@ -43,7 +71,7 @@ async function MediaGrid({ filters, page }: { filters: BrowseFilters; page: numb
 
   return (
     <InfiniteGrid
-      initialMedia={result.media}
+      initialMedia={validMedia}
       initialPage={result.pageInfo.currentPage ?? page}
       initialHasNextPage={result.pageInfo.hasNextPage}
       query={filtersToQuery(filters)}
@@ -60,6 +88,7 @@ export default async function BrowsePage({
   const { filters, page } = parseBrowseParams((key) => raw[key]);
   const genres = (await fetchGenres()).GenreCollection;
   const query = filtersToQuery(filters);
+  const isDefaultView = query === "" && page === 1;
 
   return (
     <main className={styles.page}>
@@ -67,7 +96,7 @@ export default async function BrowsePage({
       <FilterBar initialGenres={genres} />
 
       <Suspense key={`${query}|${page}`} fallback={<LoadingGrid />}>
-        <MediaGrid filters={filters} page={page} />
+        <MediaGrid filters={filters} page={page} isDefaultView={isDefaultView} />
       </Suspense>
     </main>
   );
